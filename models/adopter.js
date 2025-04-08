@@ -10,7 +10,7 @@ const adopterSchema = new mongoose.Schema({
     city: { type: String, required: true },
   },
   registerDate: { type: Date, default: Date.now },
-  completedForm: { type: Boolean, default: false}
+  safeAdopter: { type: Boolean, default: false}
 })
 
 module.exports = mongoose.model('Adopter', usuarioSchema)
