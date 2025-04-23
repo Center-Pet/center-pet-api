@@ -21,6 +21,8 @@ const adoptionSchema = new mongoose.Schema({
   transportationDate: { type: Date }, //Data do transporte
   startDateAdjustment: { type: Date }, //Data de início do Adaptação
   endDateAdjustment: { type: Date }, //Data de término do Adaptação
+}, {
+  collection: 'Ongs'
 })
 
 module.exports = mongoose.model('Adoption', adoptionSchema)
