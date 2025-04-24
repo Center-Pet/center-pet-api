@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 require("dotenv").config();
 
 console.log("Tentando conectar ao MongoDB...");
+console.log("📦 URI recebida do .env:", process.env.MONGO_URI);
 
 const connectDB = async () => {
     try {
