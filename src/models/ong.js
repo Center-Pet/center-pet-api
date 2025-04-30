@@ -2,25 +2,34 @@ const mongoose = require('mongoose')
 
 const ongSchema = new mongoose.Schema({
   name: { type: String, required: true }, //Nome da ONG
-  description: { type: String, required: true }, //Descrição da ONG
+  description: { type: String}, //Descrição da ONG
   email: { type: String, required: true, unique: true }, //Email da ONG
   password: { type: String, required: true }, //Senha da ONG
-  cnpj: { type: String, required: true, unique: true }, //CNPJ da ONG
-  cpf: { type: String, required: true, unique: true }, //CPF do responsável
-  colaborators: { type: Number, required: true }, //Número de colaboradores da ONG
+  cnpj: { type: String, required: function() { return this.role === 'ONG'; }, unique: true }, //CNPJ da ONG (obrigatório para ONGs)
+  cpf: { type: String, required: function() { return this.role === 'Projeto' || this.role === 'Protetor'; }, unique: true }, //CPF do responsável (obrigatório para Projetos e Protetores)
+  role: { type: String, enum: ['ONG', 'Projeto', 'Protetor'], required: true }, // Tipo de organização
+  collaborators: { type: Number, required: function() { return this.role === 'Projeto'; }, default: 0 }, //Número de colaboradores (obrigatório para Projetos)
   phone: { type: String, required: true}, //Telefone da ONG
-  city: { type: String, required: true }, //Cidade da ONG
+  address: { // Endereço completo
+    city: { type: String, required: true }, // Cidade da ONG
+    street: { type: String }, // Rua (opcional)
+    number: { type: String }, // Número (opcional)
+    neighborhood: { type: String }, // Bairro (opcional)
+    cep: { type: String }, // CEP (opcional)
+    complement: { type: String } // Complemento (opcional)
+  },
   profileImg: { type: String, required: true }, //Imagem de perfil da ONG
   socialMidia: { // //Redes sociais da ONG
     instagram: { type: String }, //Instagram
     facebook: { type: String }, //Facebook
     site: { type: String } //Site
   },
-  pixKey: { type: String}, //Chave PIX da ONG
+  pixKey: { type: String }, //Chave PIX da ONG
   verified: { type: Boolean, default: false }, //Verificado
   registerDate: { type: Date, default: Date.now }, //Data de registro da ONG
   petsRegisters: { type: Number, default: 0 }, //Número de pets cadastrados
   petsAdopted: { type: Number, default: 0 } //Número de pets adotados
-})
+}, { collection: 'Ongs' });
+
 
 module.exports = mongoose.model('Ong', ongSchema)

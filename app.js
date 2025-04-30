@@ -11,4 +11,6 @@ app.use(express.json());
 // Rotas de Adotantes
 app.use('/api/adopters', adopterRoutes);
 
+// Rotas de ONGs
+app.use('/api/ongs', require('./src/routes/ongRoutes'));
 module.exports = app;
