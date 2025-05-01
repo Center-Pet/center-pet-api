@@ -13,4 +13,8 @@ app.use('/api/adopters', adopterRoutes);
 
 // Rotas de ONGs
 app.use('/api/ongs', require('./src/routes/ongRoutes'));
+
+// Rotas de autenticação (login unificado)
+app.use('/api/auth', require('./src/routes/authRoutes'));
+
 module.exports = app;
