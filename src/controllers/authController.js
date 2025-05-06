@@ -2,6 +2,7 @@ const Adopter = require('../models/adopter');
 const Ong = require('../models/ong');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const tokenBlacklist = require('../utils/tokenBlacklist');
 
 /**
  * Login unificado para Adopter e Ong.
@@ -53,4 +54,17 @@ async function login(req, res) {
   });
 }
 
-module.exports = { login };
+// Rota de logout: adiciona o token à blacklist
+async function logout(req, res) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(400).json({ message: 'Token não fornecido.' });
+  }
+
+  tokenBlacklist.add(token);
+  res.status(200).json({ message: 'Logout realizado com sucesso.' });
+}
+
+module.exports = { login, logout };
