@@ -11,7 +11,7 @@ const adopterSchema = new mongoose.Schema({
 
   //Informações do formulário
   //Informações pessoais
-  birth: { type: Date}, //Data de nascimento do adotante
+  age: { type: Number }, //Idade do adotante
   phone: { type: String}, //Telefone do adotante
   profession: { type: String}, //Profissão do adotante
   cep: { type: String}, //CEP do adotante
