@@ -3,9 +3,7 @@ const bcrypt = require('bcrypt');
 
 // Função para criar uma nova ONG
 async function createOng(req, res) {
-  try {
-    console.log("Dados recebidos na requisição:", JSON.stringify(req.body, null, 2));
-    
+  try {    
     // Extraindo os dados do corpo da requisição
     const {
       name,
@@ -14,11 +12,11 @@ async function createOng(req, res) {
       password,
       phone,
       address,
-      socialMedia, // Note que aqui é socialMedia, não socialMidia
+      socialMedia, 
       pixKey,
-      profileImage, // Note que aqui está como profileImage e não profileImg
-      role, // Tipo de organização: ONG, Projeto ou Protetor
-      document, // Objeto contendo type e number
+      profileImage,
+      role, 
+      document, 
       collaborators
     } = req.body;
 
