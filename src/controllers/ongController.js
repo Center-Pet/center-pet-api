@@ -37,10 +37,10 @@ async function createOng(req, res) {
     if (document) {
       if (document.type === "CNPJ") {
         ongData.cnpj = document.number;
-        ongData.cpf = ""; // Valor padrão para ONG
+        ongData.cpf = null; // Use null em vez de string vazia
       } else {
         ongData.cpf = document.number;
-        ongData.cnpj = ""; // Valor padrão para Projeto/Protetor
+        ongData.cnpj = null; // Use null em vez de string vazia
       }
     }
 
@@ -97,8 +97,16 @@ async function createOng(req, res) {
     // Verificar se já existe ONG com mesmo email, cnpj ou cpf
     console.log("Verificando se ONG já existe...");
     const filtroExistente = { $or: [{ email: ongData.email }] };
-    if (ongData.cnpj) filtroExistente.$or.push({ cnpj: ongData.cnpj });
-    if (ongData.cpf) filtroExistente.$or.push({ cpf: ongData.cpf });
+
+    // Apenas verifica CNPJ se for um valor válido
+    if (ongData.cnpj && ongData.cnpj !== "") {
+      filtroExistente.$or.push({ cnpj: ongData.cnpj });
+    }
+
+    // Apenas verifica CPF se for um valor válido
+    if (ongData.cpf && ongData.cpf !== "") {
+      filtroExistente.$or.push({ cpf: ongData.cpf });
+    }
 
     const existingOng = await Ong.findOne(filtroExistente);
 
