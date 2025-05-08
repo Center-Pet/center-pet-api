@@ -6,6 +6,7 @@ const {
   listAdopters,
   updateAdopterProfile,
   deleteAdopter,
+  getAdopterById
 } = require('../controllers/adopterController');
 
 // Rota de registro inicial (nome, CPF, e-mail, senha)
@@ -24,7 +25,7 @@ router.patch('/editProfile', updateAdopterProfile);
 router.delete('/delete/:adopterId', deleteAdopter);
 
 // Rota para puxar informações por ID
-router.get('/:adopterId', adopterController.getAdopterById);
+router.get('/:adopterId', getAdopterById);
 
 
 module.exports = router;
