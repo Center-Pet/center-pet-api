@@ -171,11 +171,35 @@ async function updateAdopterProfile(req, res) {
     }
   }
 
+  // Buscar adotante por ID
+  async function getAdopterById(req, res) {
+    try {
+      const { adopterId } = req.params;
+
+      if (!mongoose.Types.ObjectId.isValid(adopterId)) {
+        return res.status(400).json({ message: "ID do adotante inválido." });
+      }
+
+      const adopter = await Adopter.findById(adopterId).select("-password"); // ocultar senha
+
+      if (!adopter) {
+        return res.status(404).json({ message: "Adotante não encontrado." });
+      }
+
+      res.status(200).json(adopter);
+    } catch (error) {
+      console.error("Erro ao buscar adotante:", error);
+      res.status(500).json({ message: "Erro interno no servidor." });
+    }
+  }
+
+
   module.exports = {
     createAdopter,
     updateSafeAdopter,
     listAdopters,
     updateAdopterProfile,
     deleteAdopter,
+    getAdopterById,
   };
   

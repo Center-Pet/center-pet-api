@@ -356,9 +356,57 @@ async function updateOng( req, res) {
   }
   
   
+// Função para buscar ONG por ID
+async function getOngById(req, res) {
+  try {
+    const { id } = req.params;
+    console.log(`Buscando ONG com ID: ${id}`);
+    
+    // Buscar a ONG pelo ID
+    const ong = await Ong.findById(id).select('-password');
+    
+    // Verificar se a ONG existe
+    if (!ong) {
+      console.log(`ONG com ID ${id} não encontrada`);
+      return res.status(404).json({
+        success: false,
+        message: 'ONG não encontrada'
+      });
+    }
+    
+    console.log(`ONG com ID ${id} encontrada`);
+    
+    res.status(200).json({
+      success: true,
+      data: ong
+    });
+    
+  } catch (error) {
+    console.error("ERRO AO BUSCAR ONG:");
+    console.error("Mensagem:", error.message);
+    console.error("Stack:", error.stack);
+    
+    // Verifica se o erro é de ID inválido (formato incorreto)
+    if (error.name === 'CastError' && error.kind === 'ObjectId') {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de ONG inválido',
+        error: 'Formato de ID incorreto'
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao buscar ONG',
+      error: error.message
+    });
+  }
+}
+
 module.exports = {
     createOng,
     deleteOng,
     listOngs,
-    updateOng
+    updateOng,
+    getOngById
   };

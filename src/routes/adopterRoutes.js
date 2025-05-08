@@ -23,5 +23,8 @@ router.patch('/editProfile', updateAdopterProfile);
 // Rota para deletar adotante (pode ser pelo ID ou e-mail)
 router.delete('/delete/:adopterId', deleteAdopter);
 
+// Rota para puxar informações por ID
+router.get('/:adopterId', adopterController.getAdopterById);
+
 
 module.exports = router;
