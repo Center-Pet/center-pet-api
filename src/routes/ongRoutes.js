@@ -5,6 +5,7 @@ const {
   updateOng,
   listOngs,
   deleteOng,
+  getOngById
 } = require('../controllers/ongController');
 
 // Rota de registro inicial
@@ -18,6 +19,9 @@ router.delete('/delete/:id', deleteOng);
 
 // Rota para listar ongs
 router.get('/', listOngs);
+
+// Rota para puxar informações por ID
+router.get('/:id', getOngById);
 
 
 module.exports = router;
