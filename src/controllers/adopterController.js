@@ -87,64 +87,64 @@ async function listAdopters(req, res) {
 
 // Atualização de perfil (dados básicos do adotante)
 async function updateAdopterProfile(req, res) {
-    try {
-      const {
-        email,
-        fullName,
-        password,
-        age,
-        phone,
-        cep,
-        street,
-        number,
-        neighborhood,
-        complement,
-        profession,
-        profileImg,
-        description
-      } = req.body;
-  
-      if (!email) {
-        return res.status(400).json({ message: "E-mail é obrigatório para atualização." });
-      }
-  
-      const updateData = {};
-  
-      if (fullName) updateData.fullName = fullName;
-      if (age) updateData.age = age;
-      if (phone) updateData.phone = phone;
-      if (cep) updateData.cep = cep;
-      if (street) updateData.street = street;
-      if (number) updateData.number = number;
-      if (neighborhood) updateData.neighborhood = neighborhood;
-      if (complement) updateData.complement = complement;
-      if (profession) updateData.profession = profession;
-      if (profileImg) updateData.profileImg = profileImg;
-      if (description) updateData.description = description;
-  
-      if (password) {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        updateData.password = hashedPassword;
-      }
-  
-      const updated = await Adopter.findOneAndUpdate(
-        { email },
-        { $set: updateData },
-        { new: true }
-      );
-  
-      if (!updated) {
-        return res.status(404).json({ message: "Adotante não encontrado." });
-      }
-  
-      const { password: _, ...adopterData } = updated.toObject();
-      res.status(200).json({ message: "Perfil atualizado com sucesso.", adopter: adopterData });
-  
-    } catch (error) {
-      console.error("Erro ao atualizar perfil do adotante:", error);
-      res.status(500).json({ message: "Erro interno no servidor." });
+  try {
+    const { id } = req.params; // Pegue o ID dos parâmetros da URL
+    const {
+      fullName,
+      password,
+      age,
+      phone,
+      cep,
+      street,
+      number,
+      neighborhood,
+      complement,
+      profession,
+      profileImg,
+      description
+    } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "ID do adotante inválido." });
     }
+
+    const updateData = {};
+
+    if (fullName) updateData.fullName = fullName;
+    if (age) updateData.age = age;
+    if (phone) updateData.phone = phone;
+    if (cep) updateData.cep = cep;
+    if (street) updateData.street = street;
+    if (number) updateData.number = number;
+    if (neighborhood) updateData.neighborhood = neighborhood;
+    if (complement) updateData.complement = complement;
+    if (profession) updateData.profession = profession;
+    if (profileImg) updateData.profileImg = profileImg;
+    if (description) updateData.description = description;
+
+    if (password) {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      updateData.password = hashedPassword;
+    }
+
+    const updated = await Adopter.findByIdAndUpdate(
+      id, // Busca pelo ID
+      { $set: updateData },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ message: "Adotante não encontrado." });
+    }
+
+    const { password: _, ...adopterData } = updated.toObject();
+    res.status(200).json({ message: "Perfil atualizado com sucesso.", adopter: adopterData });
+
+  } catch (error) {
+    console.error("Erro ao atualizar perfil do adotante:", error);
+    res.status(500).json({ message: "Erro interno no servidor." });
   }
+}
 
   // Função para excluir um adotante
   async function deleteAdopter(req, res) {
@@ -203,4 +203,4 @@ async function updateAdopterProfile(req, res) {
     deleteAdopter,
     getAdopterById,
   };
-  
+

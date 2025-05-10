@@ -19,7 +19,7 @@ router.post('/updateSafeAdopter', updateSafeAdopter);
 router.get('/', listAdopters);
 
 // Rota para editar perfil do adotante
-router.patch('/editProfile', updateAdopterProfile);
+router.patch('/editProfile/:id', updateAdopterProfile);
 
 // Rota para deletar adotante (pode ser pelo ID ou e-mail)
 router.delete('/delete/:adopterId', deleteAdopter);
