@@ -59,12 +59,13 @@ async function createAdopter(req, res) {
 async function updateSafeAdopter(req, res) {
   try {
     const formData = parseBooleanFields(req.body);
-    // Exemplo de filtro: encontrar pelo email (pode ser pelo _id se preferir)
-    const updated = await Adopter.findOneAndUpdate(
-      { email: formData.email },
+    // Usar o ID do usuário em vez do email
+    const updated = await Adopter.findByIdAndUpdate(
+      formData._id, // Usando o ID enviado do frontend
       { $set: formData },
       { new: true }
     );
+    
     if (!updated) return res.status(404).json({ message: "Adotante não encontrado." });
 
     res.status(200).json({ message: "Formulário atualizado com sucesso.", adopter: updated });

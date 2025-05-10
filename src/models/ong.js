@@ -5,17 +5,18 @@ const ongSchema = new mongoose.Schema({
   description: { type: String}, //Descrição da ONG
   email: { type: String, required: true, unique: true }, //Email da ONG
   password: { type: String, required: true }, //Senha da ONG
-  cnpj: { type: String, required: function() { return this.role === 'ONG'; }, unique: true }, //CNPJ da ONG (obrigatório para ONGs)
-  cpf: { type: String, required: function() { return this.role === 'Projeto' || this.role === 'Protetor'; }, unique: true }, //CPF do responsável (obrigatório para Projetos e Protetores)
+  cnpj: { type: String, required: function() { return this.role === 'ONG'; }, unique: true,sparse: true} , //CNPJ da ONG (obrigatório para ONGs)
+  cpf: { type: String, required: function() { return this.role === 'Projeto' || this.role === 'Protetor'; }, unique: true, sparse: true}, //CPF do responsável (obrigatório para Projetos e Protetores)
   role: { type: String, enum: ['ONG', 'Projeto', 'Protetor'], required: true }, // Tipo de organização
   collaborators: { type: Number, required: function() { return this.role === 'Projeto'; }, default: 0 }, //Número de colaboradores (obrigatório para Projetos)
   phone: { type: String, required: true}, //Telefone da ONG
-  address: { // Endereço completo
+  address: { // Endereço completo´
+    uf: { type: String, required: true }, // Unidade Federativa (Estado) da ONG
     city: { type: String, required: true }, // Cidade da ONG
-    street: { type: String }, // Rua (opcional)
-    number: { type: String }, // Número (opcional)
-    neighborhood: { type: String }, // Bairro (opcional)
-    cep: { type: String }, // CEP (opcional)
+    street: { type: String, required: true }, // Rua (opcional)
+    number: { type: String, required: true }, // Número (opcional)
+    neighborhood: { type: String, required: true }, // Bairro (opcional)
+    cep: { type: String, required: true }, // CEP (opcional)
     complement: { type: String } // Complemento (opcional)
   },
   profileImg: { type: String, required: true }, //Imagem de perfil da ONG

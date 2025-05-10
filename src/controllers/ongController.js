@@ -37,20 +37,21 @@ async function createOng(req, res) {
     if (document) {
       if (document.type === "CNPJ") {
         ongData.cnpj = document.number;
-        ongData.cpf = null; // Use null em vez de string vazia
-      } else {
+        // Não defina cpf como null, apenas omita o campo
+      } else if (document.type === "CPF") {
         ongData.cpf = document.number;
-        ongData.cnpj = null; // Use null em vez de string vazia
+        // Não defina cnpj como null, apenas omita o campo
       }
     }
 
     // Configurar o endereço
     if (address) {
       ongData.address = {
+        uf: address.uf || "", // Adicione o campo UF
         city: address.city || "",
         street: address.street || "",
         number: address.number || "",
-        neighborhood: address.district || "", // Note a diferença de nomes
+        neighborhood: address.neighborhood || "", // Note a diferença de nomes
         cep: address.zipCode || "",
         complement: address.complement || ""
       };
@@ -309,11 +310,12 @@ async function updateOng( req, res) {
       // Atualizar endereço
       if (address) {
         updateData.address = {};
+        if (address.uf !== undefined) updateData.address.uf = address.uf;
         if (address.city !== undefined) updateData.address.city = address.city;
         if (address.street !== undefined) updateData.address.street = address.street;
         if (address.number !== undefined) updateData.address.number = address.number;
-        if (address.district !== undefined) updateData.address.neighborhood = address.district;
-        if (address.zipCode !== undefined) updateData.address.cep = address.zipCode;
+        if (address.neighborhood !== undefined) updateData.address.neighborhood = address.neighborhood; // Adicione esta linha
+        if (address.cep !== undefined) updateData.address.cep = address.cep; // Adicione esta linha
         if (address.complement !== undefined) updateData.address.complement = address.complement;
       }
       

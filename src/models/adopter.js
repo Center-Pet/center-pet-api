@@ -19,6 +19,7 @@ const adopterSchema = new mongoose.Schema({
   number: { type: String}, //Número da casa do adotante
   neighborhood: { type: String}, //Bairro do adotante
   complement: { type: String}, //Complemento do endereço do adotante
+  city: { type: String}, //Cidade do adotante
 
   
   //Sobre o ambiente
