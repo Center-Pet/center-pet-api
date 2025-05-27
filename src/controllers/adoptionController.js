@@ -1,4 +1,4 @@
-const Adoption = require('../models/Adoption');
+const Adoption = require('../models/adoption');
 
 // Listar todas as adoções
 exports.getAllAdoptions = async (req, res) => {
