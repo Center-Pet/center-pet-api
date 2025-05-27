@@ -20,7 +20,8 @@ const petSchema = new mongoose.Schema({
   available: { type: Boolean, default: true }, // Disponível para adoção
   adopted: { type: Boolean, default: false }, // Adotado
   ongId: { type: mongoose.Schema.Types.ObjectId, ref: 'Ong', required: true }, // ID da ONG responsável
-  location: { type: String, required: true }, // Localização
+  state: { type: String, required: true }, // Estado do pet
+  city: { type: String, required: true }, // Cidade do pet
   registerDate: { type: Date, default: Date.now }, // Data de registro
 },{ collection: 'Pets' });
 
