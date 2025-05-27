@@ -17,8 +17,10 @@ app.use('/api/adopters', adopterRoutes);
 // Rotas de ONGs
 app.use('/api/ongs', require('./src/routes/ongRoutes'));
 
-
 // Rotas de Pets
 app.use('/api/pets', require('./src/routes/petRoutes'));
+
+// Rotas das Adoções
+app.use('/api/adoptions', require('./src/routes/adoptionRoutes'))
 
 module.exports = app;

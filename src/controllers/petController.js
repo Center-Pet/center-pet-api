@@ -124,10 +124,21 @@ async function updatePet(req, res) {
   }
 }
 
+// Rota para listar todos os pets
+async function listPets(req, res) {
+  try {
+    const pets = await Pet.find(); // Busca todos os pets no banco de dados
+    res.status(200).json(pets);
+  } catch (error) {
+    res.status(500).json({ message: 'Erro ao buscar todos os pets.', error: error.message });
+  }
+}
+
 module.exports = {
   createPet,
   getPetsByOng,
   getPetById,
   deletePet,
-  updatePet, // <--- adicione aqui
+  updatePet,
+  listPets, // <--- adicione aqui
 };
