@@ -14,7 +14,7 @@ const petSchema = new mongoose.Schema({
     castrated: { type: Boolean, required: true }, // Castrado
     vaccinated: { type: Boolean, required: true }, // Vacinado
     dewormed: { type: Boolean, required: true }, // Vermifugado
-    specialCondition: { type: String }, // Condição especial
+    specialCondition: { type: String, required: true }, // Condição especial
   },
   waitingTime: { type: String }, // Tempo de espera
   available: { type: Boolean, default: true }, // Disponível para adoção
