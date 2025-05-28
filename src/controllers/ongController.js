@@ -1,4 +1,5 @@
 const Ong = require('../models/ong');
+const Pet = require('../models/pet'); // Adicione esta importação
 const bcrypt = require('bcrypt');
 
 // Função para criar uma nova ONG
@@ -175,14 +176,19 @@ async function deleteOng(req, res){
       });
     }
 
-    // Deletar a ONG
+    // Primeiro, deletar todos os pets associados a esta ONG
+    console.log(`Deletando todos os pets da ONG com ID: ${id}`);
+    const petsDeleteResult = await Pet.deleteMany({ ongId: id });
+    console.log(`${petsDeleteResult.deletedCount} pets deletados com sucesso`);
+
+    // Depois, deletar a ONG
     await Ong.findByIdAndDelete(id);
     
-    console.log(`ONG com ID ${id} deletada com sucesso`);
+    console.log(`ONG com ID ${id} e todos seus pets deletados com sucesso`);
     
     res.status(200).json({
       success: true,
-      message: 'ONG deletada com sucesso'
+      message: `ONG deletada com sucesso. ${petsDeleteResult.deletedCount} pets associados também foram removidos.`
     });
     
   } catch (error) {
