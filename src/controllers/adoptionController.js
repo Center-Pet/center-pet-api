@@ -31,10 +31,10 @@ exports.createAdoption = async (req, res) => {
             petId,
             ongId,
             status,
-            requestDate,
-            transportationDate,
-            startDateAdjustment,
-            endDateAdjustment
+            requestDate
+            //transportationDate,
+            //startDateAdjustment,
+            //endDateAdjustment
         } = req.body;
 
         // Criação de uma nova adoção com base no schema
@@ -42,11 +42,11 @@ exports.createAdoption = async (req, res) => {
             userId,
             petId,
             ongId,
-            status,
-            requestDate,
-            transportationDate,
-            startDateAdjustment,
-            endDateAdjustment
+            status: status || 'requestReceived', // Define o status padrão como 'requestReceived' se não for fornecido
+            requestDate: requestDate || new Date(), // Define a data de solicitação como a data atual se não for fornecida
+            //transportationDate,
+            //startDateAdjustment,
+            //endDateAdjustment
         });
 
         // Salvando no banco de dados
@@ -66,10 +66,10 @@ exports.updateAdoption = async (req, res) => {
             'petId',
             'ongId',
             'status',
-            'requestDate',
-            'transportationDate',
-            'startDateAdjustment',
-            'endDateAdjustment'
+            'requestDate'
+            //'transportationDate',
+            //'startDateAdjustment',
+            //'endDateAdjustment'
         ];
         const updateData = {};
         for (const key of allowedFields) {

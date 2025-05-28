@@ -9,16 +9,16 @@ const adoptionSchema = new mongoose.Schema({
     'requestReceived', //Solicitação recebida
     'inProgress', //Em andamento
     'canceled', //Cancelada
-    'transporting', //Transporte
+    //'transporting', //Transporte
     'inAdjustment', //Adaptação
     'completed', //Concluída
     'return'], //Retorno
     required: true
   },
   requestDate: { type: Date, default: Date.now }, //Data da solicitação
-  transportationDate: { type: Date }, //Data do transporte
-  startDateAdjustment: { type: Date }, //Data de início do Adaptação
-  endDateAdjustment: { type: Date }, //Data de término do Adaptação
+  //transportationDate: { type: Date }, //Data do transporte
+  //startDateAdjustment: { type: Date }, //Data de início do Adaptação
+  //endDateAdjustment: { type: Date }, //Data de término do Adaptação
 }, {
   collection: 'Adoptions'
 })
