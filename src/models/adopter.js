@@ -15,6 +15,7 @@ const adopterSchema = new mongoose.Schema({
   phone: { type: String}, //Telefone do adotante
   profession: { type: String}, //Profissão do adotante
   cep: { type: String}, //CEP do adotante
+  state: { type: String }, // Estado do adotante
   street: { type: String}, //Rua do adotante
   number: { type: String}, //Número da casa do adotante
   neighborhood: { type: String}, //Bairro do adotante

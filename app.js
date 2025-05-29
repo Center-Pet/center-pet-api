@@ -12,7 +12,7 @@ app.use(express.json());
 app.use('/api/auth', require('./src/routes/authRoutes'));
 
 // Rotas de Adotantes
-app.use('/api/adopters', adopterRoutes);
+app.use('/api/adopters', require('./src/routes/adopterRoutes'));
 
 // Rotas de ONGs
 app.use('/api/ongs', require('./src/routes/ongRoutes'));

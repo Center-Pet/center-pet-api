@@ -95,6 +95,8 @@ async function updateAdopterProfile(req, res) {
       age,
       phone,
       cep,
+      city,
+      state,
       street,
       number,
       neighborhood,
@@ -114,6 +116,8 @@ async function updateAdopterProfile(req, res) {
     if (age) updateData.age = age;
     if (phone) updateData.phone = phone;
     if (cep) updateData.cep = cep;
+    if (state) updateData.state = state; // Adicionando o estado
+    if (city) updateData.city = city;
     if (street) updateData.street = street;
     if (number) updateData.number = number;
     if (neighborhood) updateData.neighborhood = neighborhood;

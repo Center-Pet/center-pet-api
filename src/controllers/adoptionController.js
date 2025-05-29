@@ -1,7 +1,7 @@
 const Adoption = require('../models/adoption');
 
 // Listar todas as adoções
-exports.getAllAdoptions = async (req, res) => {
+async function getAllAdoptions(req, res){
     try {
         const adoptions = await Adoption.find();
         res.status(200).json(adoptions);
@@ -10,21 +10,33 @@ exports.getAllAdoptions = async (req, res) => {
     }
 };
 
-// Buscar uma adoção por ID
-exports.getAdoptionById = async (req, res) => {
+// Buscar adoções por ID da ONG
+async function getAdoptionsByOngId(req, res){
     try {
-        const adoption = await Adoption.findById(req.params.id);
-        if (!adoption) {
-            return res.status(404).json({ message: 'Adoção não encontrada' });
+        const { ongId } = req.params;
+        
+        const adoptions = await Adoption.find({ ongId })
+            .populate('petId', 'name image')  // Popula dados básicos do pet
+            .populate('userId', 'name email'); // Popula dados básicos do usuário
+        
+        if (adoptions.length === 0) {
+            return res.status(200).json({ 
+                message: 'Nenhuma adoção encontrada para esta ONG',
+                adoptions: []
+            });
         }
-        res.status(200).json(adoption);
+        
+        res.status(200).json({
+            count: adoptions.length,
+            adoptions
+        });
     } catch (err) {
-        res.status(500).json({ message: 'Erro ao buscar adoção', error: err.message });
+        res.status(500).json({ message: 'Erro ao buscar adoções da ONG', error: err.message });
     }
-};
+}
 
 // Criar uma nova adoção
-exports.createAdoption = async (req, res) => {
+async function createAdoption(req, res){
     try {
         const {
             userId,
@@ -58,7 +70,7 @@ exports.createAdoption = async (req, res) => {
 };
 
 // Atualizar uma adoção existente
-exports.updateAdoption = async (req, res) => {
+async function updateAdoption(req, res){
     try {
         // Filtra apenas os campos permitidos pelo schema
         const allowedFields = [
@@ -94,7 +106,7 @@ exports.updateAdoption = async (req, res) => {
 };
 
 // Deletar uma adoção
-exports.deleteAdoption = async (req, res) => {
+async function deleteAdoption(req, res){
     try {
         // Busca a adoção antes de deletar para garantir que existe e para possíveis hooks do schema
         const adoption = await Adoption.findById(req.params.id);
@@ -106,4 +118,12 @@ exports.deleteAdoption = async (req, res) => {
     } catch (err) {
         res.status(500).json({ message: 'Erro ao deletar adoção', error: err.message });
     }
+};
+
+module.exports = {
+    getAllAdoptions,
+    getAdoptionsByOngId,
+    createAdoption,
+    updateAdoption,
+    deleteAdoption
 };
