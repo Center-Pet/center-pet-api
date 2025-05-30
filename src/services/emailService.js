@@ -3,6 +3,8 @@ const nodemailer = require("nodemailer");
 const welcomeAdopterTemplate = require("../emailTemplates/welcomeAdopter");
 const welcomeOngTemplate = require("../emailTemplates/welcomeOng");
 const resetPasswordTemplate = require("../emailTemplates/resetPassword");
+const deleteAdopterTemplate = require("../emailTemplates/deleteAdopter");
+const deleteOngTemplate = require("../emailTemplates/deleteOng");
 require("dotenv").config();
 
 const transporter = nodemailer.createTransport({
@@ -68,7 +70,30 @@ async function sendResetPasswordEmail(to, name, resetLink) {
   }
 }
 
+// Enviar email de confirmação de exclusão
+async function sendDeleteEmail(email, name, isOng) {
+  const template = isOng ? deleteOngTemplate(name) : deleteAdopterTemplate(name);
+  const userType = isOng ? 'ONG' : 'Adotante';
+  
+  const mailOptions = {
+    from: `"Center Pet 🐾" <${process.env.EMAIL_USER}>`,
+    to: email,
+    subject: `Conta excluída com sucesso - Center Pet`,
+    html: template
+  };
+  
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Email de confirmação de exclusão enviado para ${userType}: ${email}`);
+    return true;
+  } catch (error) {
+    console.error(`Erro ao enviar email para ${email}:`, error);
+    throw error;
+  }
+}
+
 module.exports = {
   sendWelcomeEmail,
   sendResetPasswordEmail,
+  sendDeleteEmail
 };

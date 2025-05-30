@@ -5,12 +5,14 @@ const ongSchema = new mongoose.Schema({
   description: { type: String}, //Descrição da ONG
   email: { type: String, required: true, unique: true }, //Email da ONG
   password: { type: String, required: true }, //Senha da ONG
-  cnpj: { type: String, required: function() { return this.role === 'ONG'; }, unique: true,sparse: true} , //CNPJ da ONG (obrigatório para ONGs)
-  cpf: { type: String, required: function() { return this.role === 'Projeto' || this.role === 'Protetor'; }, unique: true, sparse: true}, //CPF do responsável (obrigatório para Projetos e Protetores)
+  cnpj: { type: String, required: function() { return this.role === 'ONG'; }, sparse: true}, //CNPJ da ONG (obrigatório para ONGs)
+  cpf: { type: String, required: function() { return this.role === 'Projeto' || this.role === 'Protetor'; }, sparse: true}, //CPF do responsável (obrigatório para Projetos e Protetores)
+  cnpjHash: { type: String, unique: true, sparse: true }, // Hash determinístico do CNPJ para verificação de unicidade
+  cpfHash: { type: String, unique: true, sparse: true },  // Hash determinístico do CPF para verificação de unicidade
   role: { type: String, enum: ['ONG', 'Projeto', 'Protetor'], required: true }, // Tipo de organização
   collaborators: { type: Number, required: function() { return this.role === 'Projeto'; }, default: 0 }, //Número de colaboradores (obrigatório para Projetos)
   phone: { type: String, required: true}, //Telefone da ONG
-  address: { // Endereço completo´
+  address: { // Endereço completo
     uf: { type: String, required: true }, // Unidade Federativa (Estado) da ONG
     city: { type: String, required: true }, // Cidade da ONG
     street: { type: String, required: true }, // Rua (opcional)
@@ -20,7 +22,7 @@ const ongSchema = new mongoose.Schema({
     complement: { type: String } // Complemento (opcional)
   },
   profileImg: { type: String, required: true }, //Imagem de perfil da ONG
-  socialMidia: { // //Redes sociais da ONG
+  socialMidia: { // Redes sociais da ONG
     instagram: { type: String }, //Instagram
     facebook: { type: String }, //Facebook
     site: { type: String } //Site
@@ -31,6 +33,5 @@ const ongSchema = new mongoose.Schema({
   petsRegisters: { type: Number, default: 0 }, //Número de pets cadastrados
   petsAdopted: { type: Number, default: 0 } //Número de pets adotados
 }, { collection: 'Ongs' });
-
 
 module.exports = mongoose.model('Ong', ongSchema)

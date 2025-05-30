@@ -7,7 +7,7 @@ module.exports = function (name) {
           <table width="480" cellpadding="0" cellspacing="0" style="background:#fff; border-radius:16px; margin:2rem 0; box-shadow:0 8px 32px rgba(209,77,114,0.08);">
             <tr>
               <td align="center" style="padding:2rem 1.5rem 0 1.5rem;">
-                <img src="https://i.imgur.com/WanR0b3.png" alt="Logo Center Pet" width="90" style="border-radius:18px; margin-bottom:1.2rem;"/>
+                <img src="https://i.imgur.com/v3xZGs3.png" alt="Logo Center Pet" width="90" style="border-radius:18px; margin-bottom:1.2rem;"/>
                 <h1 style="color:#d14d72; font-size:2rem; margin-bottom:0.5rem;">Bem-vindo à Center Pet!</h1>
                 <p style="color:#222; font-size:1.1rem; margin-bottom:1.5rem;">
                   Olá, <b>${name}</b>!<br/>

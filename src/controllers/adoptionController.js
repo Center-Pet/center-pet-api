@@ -1,4 +1,5 @@
 const Adoption = require('../models/adoption');
+const mongoose = require('mongoose'); // Adicionar esta importação
 
 // Listar todas as adoções
 async function getAllAdoptions(req, res){
@@ -14,10 +15,24 @@ async function getAllAdoptions(req, res){
 async function getAdoptionsByOngId(req, res){
     try {
         const { ongId } = req.params;
+
+        // Validar o ID da ONG
+        if (!mongoose.Types.ObjectId.isValid(ongId)) {
+            return res.status(400).json({ 
+                message: 'ID da ONG inválido',
+                adoptions: []
+            });
+        }
+        
+        // Adicione logs para depuração
+        console.log(`Buscando adoções para ONG com ID: ${ongId}`);
         
         const adoptions = await Adoption.find({ ongId })
-            .populate('petId', 'name image')  // Popula dados básicos do pet
-            .populate('userId', 'name email'); // Popula dados básicos do usuário
+            .populate('petId', 'name image') // campos do pet
+            .populate('userId', 'fullName email profileImg') // campos do adotante (Adopter)
+            .exec(); // garantir que a consulta seja executada
+        
+        console.log(`Encontrados ${adoptions.length} registros de adoções`);
         
         if (adoptions.length === 0) {
             return res.status(200).json({ 
@@ -31,7 +46,11 @@ async function getAdoptionsByOngId(req, res){
             adoptions
         });
     } catch (err) {
-        res.status(500).json({ message: 'Erro ao buscar adoções da ONG', error: err.message });
+        console.error('Erro ao buscar adoções da ONG:', err);
+        res.status(500).json({ 
+            message: 'Erro ao buscar adoções da ONG', 
+            error: err.message 
+        });
     }
 }
 
