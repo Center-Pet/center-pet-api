@@ -8,7 +8,7 @@ const adoptionSchema = new mongoose.Schema({
     enum: [
     'requestReceived',
     'inProgress',
-    'canceled',
+    'rejected',
     'inAdjustment',
     'completed',
     'return'],
