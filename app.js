@@ -24,7 +24,7 @@ app.use('/api/pets', require('./src/routes/petRoutes'));
 app.use('/api/adoptions', require('./src/routes/adoptionRoutes'));
 
 // // Adicione este código após as outras configurações de rotas
-// const emailRoutes = require('./src/routes/emailRoutes');
-// app.use('/api/emails', emailRoutes);
+const emailRoutes = require('./src/routes/emailRoutes');
+app.use('/api/emails', emailRoutes);
 
 module.exports = app;

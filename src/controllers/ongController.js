@@ -1,10 +1,11 @@
 const Ong = require('../models/ong');
 const Pet = require('../models/pet'); // Adicione esta importação
 const bcrypt = require('bcrypt');
+const { sendWelcomeEmail } = require('../services/emailService');
 
 // Função para criar uma nova ONG
 async function createOng(req, res) {
-  try {    
+  try {
     // Extraindo os dados do corpo da requisição
     const {
       name,
@@ -13,11 +14,11 @@ async function createOng(req, res) {
       password,
       phone,
       address,
-      socialMedia, 
+      socialMedia,
       pixKey,
       profileImage,
-      role, 
-      document, 
+      role,
+      document,
       collaborators
     } = req.body;
 
@@ -29,7 +30,7 @@ async function createOng(req, res) {
       password,
       phone,
       pixKey: pixKey || "",
-      profileImg: profileImage, 
+      profileImg: profileImage,
       collaborators: Number(collaborators) || 0,
       role: role
     };
@@ -69,7 +70,7 @@ async function createOng(req, res) {
 
     // Verificar campos obrigatórios pelo role
     const camposFaltantes = [];
-    
+
     // Validações específicas por tipo
     if (role === "ONG" && !ongData.cnpj) {
       camposFaltantes.push('CNPJ');
@@ -87,7 +88,7 @@ async function createOng(req, res) {
     if (!ongData.phone) camposFaltantes.push('Telefone');
     if (!ongData.profileImg) camposFaltantes.push('Imagem de perfil');
     if (!ongData.address?.city) camposFaltantes.push('Cidade');
-    
+
     if (camposFaltantes.length > 0) {
       console.log("Campos obrigatórios faltando:", camposFaltantes);
       return res.status(400).json({
@@ -133,7 +134,7 @@ async function createOng(req, res) {
     // Salvar a ONG no banco de dados
     console.log("Salvando ONG no banco de dados...");
     const savedOng = await newOng.save();
-    console.log("ONG salva com sucesso com ID:", savedOng._id);
+    await sendWelcomeEmail(ongData.email, ongData.name, true); // Envia e-mail de boas-vindas para ONG
 
     // Remover a senha do objeto de resposta
     const ongResponse = savedOng.toObject();
@@ -149,7 +150,7 @@ async function createOng(req, res) {
     console.error("ERRO AO CRIAR ONG:");
     console.error("Mensagem:", error.message);
     console.error("Stack:", error.stack);
-    
+
     res.status(500).json({
       success: false,
       message: 'Erro ao criar ONG',
@@ -159,15 +160,15 @@ async function createOng(req, res) {
 };
 
 // Função para deletar uma ONG
-async function deleteOng(req, res){
+async function deleteOng(req, res) {
   try {
     const { id } = req.params;
-    
+
     console.log(`Tentando deletar ONG com ID: ${id}`);
 
     // Verificar se a ONG existe
     const ong = await Ong.findById(id);
-    
+
     if (!ong) {
       console.log(`ONG com ID ${id} não encontrada`);
       return res.status(404).json({
@@ -183,19 +184,19 @@ async function deleteOng(req, res){
 
     // Depois, deletar a ONG
     await Ong.findByIdAndDelete(id);
-    
+
     console.log(`ONG com ID ${id} e todos seus pets deletados com sucesso`);
-    
+
     res.status(200).json({
       success: true,
       message: `ONG deletada com sucesso. ${petsDeleteResult.deletedCount} pets associados também foram removidos.`
     });
-    
+
   } catch (error) {
     console.error("ERRO AO DELETAR ONG:");
     console.error("Mensagem:", error.message);
     console.error("Stack:", error.stack);
-    
+
     res.status(500).json({
       success: false,
       message: 'Erro ao deletar ONG',
@@ -207,172 +208,172 @@ async function deleteOng(req, res){
 
 // Função para listar ONGs
 async function listOngs(req, res) {
-    try {
-      console.log("Buscando lista de ONGs...");
-      
-      // Parâmetros de consulta opcionais
-      const { role, city, verified } = req.query;
-      
-      // Construindo o filtro com base nos parâmetros
-      const filter = {};
-      
-      // Filtro por tipo de organização (ONG, Projeto ou Protetor)
-      if (role) {
-        filter.role = role;
-      }
-      
-      // Filtro por cidade
-      if (city) {
-        filter['address.city'] = { $regex: city, $options: 'i' }; // Case-insensitive
-      }
-      
-      // Filtro por status de verificação
-      if (verified !== undefined) {
-        filter.verified = verified === 'true';
-      }
-      
-      // Buscar ONGs com os filtros aplicados
-      const ongs = await Ong.find(filter)
-        .select('-password') // Exclui o campo senha
-        .sort({ registerDate: -1 }); // Ordena do mais recente para o mais antigo
-      
-      console.log(`${ongs.length} ONGs encontradas`);
-      
-      res.status(200).json({
-        success: true,
-        count: ongs.length,
-        data: ongs
-      });
-      
-    } catch (error) {
-      console.error("ERRO AO LISTAR ONGS:");
-      console.error("Mensagem:", error.message);
-      console.error("Stack:", error.stack);
-      
-      res.status(500).json({
-        success: false,
-        message: 'Erro ao listar ONGs',
-        error: error.message
-      });
-    }
-  }
+  try {
+    console.log("Buscando lista de ONGs...");
 
-  // Adicione após a função listOngs
+    // Parâmetros de consulta opcionais
+    const { role, city, verified } = req.query;
+
+    // Construindo o filtro com base nos parâmetros
+    const filter = {};
+
+    // Filtro por tipo de organização (ONG, Projeto ou Protetor)
+    if (role) {
+      filter.role = role;
+    }
+
+    // Filtro por cidade
+    if (city) {
+      filter['address.city'] = { $regex: city, $options: 'i' }; // Case-insensitive
+    }
+
+    // Filtro por status de verificação
+    if (verified !== undefined) {
+      filter.verified = verified === 'true';
+    }
+
+    // Buscar ONGs com os filtros aplicados
+    const ongs = await Ong.find(filter)
+      .select('-password') // Exclui o campo senha
+      .sort({ registerDate: -1 }); // Ordena do mais recente para o mais antigo
+
+    console.log(`${ongs.length} ONGs encontradas`);
+
+    res.status(200).json({
+      success: true,
+      count: ongs.length,
+      data: ongs
+    });
+
+  } catch (error) {
+    console.error("ERRO AO LISTAR ONGS:");
+    console.error("Mensagem:", error.message);
+    console.error("Stack:", error.stack);
+
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao listar ONGs',
+      error: error.message
+    });
+  }
+}
+
+// Adicione após a função listOngs
 
 // Função para editar uma ONG
-async function updateOng( req, res) {
-    try {
-      const { id } = req.params;
-      console.log(`Tentando atualizar ONG com ID: ${id}`);
-  
-      // Verificar se a ONG existe
-      const ong = await Ong.findById(id);
-      if (!ong) {
-        console.log(`ONG com ID ${id} não encontrada`);
-        return res.status(404).json({
-          success: false,
-          message: 'ONG não encontrada'
-        });
-      }
-  
-      // Extrair dados da requisição
-      const {
-        name,
-        description,
-        email,
-        password,
-        phone,
-        address,
-        socialMedia,
-        pixKey,
-        profileImage,
-        collaborators,
-        // role e cpf/cnpj não podem ser alterados
-      } = req.body;
-  
-      // Preparar os dados para atualização
-      const updateData = {};
-  
-      // Atualizar apenas campos enviados na requisição
-      if (name !== undefined) updateData.name = name;
-      if (description !== undefined) updateData.description = description;
-      if (email !== undefined) updateData.email = email;
-      if (phone !== undefined) updateData.phone = phone;
-      if (pixKey !== undefined) updateData.pixKey = pixKey;
-      if (profileImage !== undefined) updateData.profileImg = profileImage;
-      
-      // Atualizar senha - apenas se for enviada
-      if (password) {
-        const salt = await bcrypt.genSalt(10);
-        updateData.password = await bcrypt.hash(password, salt);
-        console.log("Senha atualizada e criptografada");
-      }
-      
-      // Atualizar collaborators apenas se for um Projeto
-      if (ong.role === 'Projeto' && collaborators !== undefined) {
-        updateData.collaborators = Number(collaborators);
-      }
-      
-      // Atualizar endereço
-      if (address) {
-        updateData.address = {};
-        if (address.uf !== undefined) updateData.address.uf = address.uf;
-        if (address.city !== undefined) updateData.address.city = address.city;
-        if (address.street !== undefined) updateData.address.street = address.street;
-        if (address.number !== undefined) updateData.address.number = address.number;
-        if (address.neighborhood !== undefined) updateData.address.neighborhood = address.neighborhood; // Adicione esta linha
-        if (address.cep !== undefined) updateData.address.cep = address.cep; // Adicione esta linha
-        if (address.complement !== undefined) updateData.address.complement = address.complement;
-      }
-      
-      // Atualizar redes sociais
-      if (socialMedia) {
-        updateData.socialMidia = {};
-        if (socialMedia.instagram !== undefined) updateData.socialMidia.instagram = socialMedia.instagram;
-        if (socialMedia.facebook !== undefined) updateData.socialMidia.facebook = socialMedia.facebook;
-        if (socialMedia.website !== undefined) updateData.socialMidia.site = socialMedia.website;
-      }
-  
-      console.log("Dados a serem atualizados:", updateData);
-      
-      // Atualizar ONG
-      const updatedOng = await Ong.findByIdAndUpdate(
-        id,
-        { $set: updateData },
-        { new: true, runValidators: true }
-      ).select('-password');
-      
-      console.log(`ONG com ID ${id} atualizada com sucesso`);
-      
-      res.status(200).json({
-        success: true,
-        message: 'ONG atualizada com sucesso',
-        data: updatedOng
-      });
-      
-    } catch (error) {
-      console.error("ERRO AO ATUALIZAR ONG:");
-      console.error("Mensagem:", error.message);
-      console.error("Stack:", error.stack);
-      
-      res.status(500).json({
+async function updateOng(req, res) {
+  try {
+    const { id } = req.params;
+    console.log(`Tentando atualizar ONG com ID: ${id}`);
+
+    // Verificar se a ONG existe
+    const ong = await Ong.findById(id);
+    if (!ong) {
+      console.log(`ONG com ID ${id} não encontrada`);
+      return res.status(404).json({
         success: false,
-        message: 'Erro ao atualizar ONG',
-        error: error.message
+        message: 'ONG não encontrada'
       });
     }
+
+    // Extrair dados da requisição
+    const {
+      name,
+      description,
+      email,
+      password,
+      phone,
+      address,
+      socialMedia,
+      pixKey,
+      profileImage,
+      collaborators,
+      // role e cpf/cnpj não podem ser alterados
+    } = req.body;
+
+    // Preparar os dados para atualização
+    const updateData = {};
+
+    // Atualizar apenas campos enviados na requisição
+    if (name !== undefined) updateData.name = name;
+    if (description !== undefined) updateData.description = description;
+    if (email !== undefined) updateData.email = email;
+    if (phone !== undefined) updateData.phone = phone;
+    if (pixKey !== undefined) updateData.pixKey = pixKey;
+    if (profileImage !== undefined) updateData.profileImg = profileImage;
+
+    // Atualizar senha - apenas se for enviada
+    if (password) {
+      const salt = await bcrypt.genSalt(10);
+      updateData.password = await bcrypt.hash(password, salt);
+      console.log("Senha atualizada e criptografada");
+    }
+
+    // Atualizar collaborators apenas se for um Projeto
+    if (ong.role === 'Projeto' && collaborators !== undefined) {
+      updateData.collaborators = Number(collaborators);
+    }
+
+    // Atualizar endereço
+    if (address) {
+      updateData.address = {};
+      if (address.uf !== undefined) updateData.address.uf = address.uf;
+      if (address.city !== undefined) updateData.address.city = address.city;
+      if (address.street !== undefined) updateData.address.street = address.street;
+      if (address.number !== undefined) updateData.address.number = address.number;
+      if (address.neighborhood !== undefined) updateData.address.neighborhood = address.neighborhood; // Adicione esta linha
+      if (address.cep !== undefined) updateData.address.cep = address.cep; // Adicione esta linha
+      if (address.complement !== undefined) updateData.address.complement = address.complement;
+    }
+
+    // Atualizar redes sociais
+    if (socialMedia) {
+      updateData.socialMidia = {};
+      if (socialMedia.instagram !== undefined) updateData.socialMidia.instagram = socialMedia.instagram;
+      if (socialMedia.facebook !== undefined) updateData.socialMidia.facebook = socialMedia.facebook;
+      if (socialMedia.website !== undefined) updateData.socialMidia.site = socialMedia.website;
+    }
+
+    console.log("Dados a serem atualizados:", updateData);
+
+    // Atualizar ONG
+    const updatedOng = await Ong.findByIdAndUpdate(
+      id,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    console.log(`ONG com ID ${id} atualizada com sucesso`);
+
+    res.status(200).json({
+      success: true,
+      message: 'ONG atualizada com sucesso',
+      data: updatedOng
+    });
+
+  } catch (error) {
+    console.error("ERRO AO ATUALIZAR ONG:");
+    console.error("Mensagem:", error.message);
+    console.error("Stack:", error.stack);
+
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao atualizar ONG',
+      error: error.message
+    });
   }
-  
-  
+}
+
+
 // Função para buscar ONG por ID
 async function getOngById(req, res) {
   try {
     const { id } = req.params;
     console.log(`Buscando ONG com ID: ${id}`);
-    
+
     // Buscar a ONG pelo ID
     const ong = await Ong.findById(id).select('-password');
-    
+
     // Verificar se a ONG existe
     if (!ong) {
       console.log(`ONG com ID ${id} não encontrada`);
@@ -381,19 +382,19 @@ async function getOngById(req, res) {
         message: 'ONG não encontrada'
       });
     }
-    
+
     console.log(`ONG com ID ${id} encontrada`);
-    
+
     res.status(200).json({
       success: true,
       data: ong
     });
-    
+
   } catch (error) {
     console.error("ERRO AO BUSCAR ONG:");
     console.error("Mensagem:", error.message);
     console.error("Stack:", error.stack);
-    
+
     // Verifica se o erro é de ID inválido (formato incorreto)
     if (error.name === 'CastError' && error.kind === 'ObjectId') {
       return res.status(400).json({
@@ -402,7 +403,7 @@ async function getOngById(req, res) {
         error: 'Formato de ID incorreto'
       });
     }
-    
+
     res.status(500).json({
       success: false,
       message: 'Erro ao buscar ONG',
@@ -412,9 +413,9 @@ async function getOngById(req, res) {
 }
 
 module.exports = {
-    createOng,
-    deleteOng,
-    listOngs,
-    updateOng,
-    getOngById
-  };
+  createOng,
+  deleteOng,
+  listOngs,
+  updateOng,
+  getOngById
+};

@@ -1,7 +1,7 @@
 const bcrypt = require('bcrypt');
 const Adopter = require('../models/adopter');
 const mongoose = require('mongoose');
-
+const { sendWelcomeEmail } = require('../services/emailService');
 
 // Função para converter "true"/"false" (strings) em booleanos
 const parseBooleanFields = (data) => {
@@ -46,6 +46,7 @@ async function createAdopter(req, res) {
       safeAdopter: false, // default
     });
     await newAdopter.save();
+    await sendWelcomeEmail(email, fullName, false); // Envia e-mail de boas-vindas para adotante
 
     const { password: _, ...adopterData } = newAdopter.toObject();
     res.status(201).json({ message: "Adotante criado com sucesso!", adopter: adopterData });
@@ -65,7 +66,7 @@ async function updateSafeAdopter(req, res) {
       { $set: formData },
       { new: true }
     );
-    
+
     if (!updated) return res.status(404).json({ message: "Adotante não encontrado." });
 
     res.status(200).json({ message: "Formulário atualizado com sucesso.", adopter: updated });
@@ -76,14 +77,14 @@ async function updateSafeAdopter(req, res) {
 }
 
 async function listAdopters(req, res) {
-    try {
-      const adopters = await Adopter.find({});
-      return res.status(200).json(adopters);
-    } catch (err) {
-      console.error('Erro ao buscar adotantes:', err);
-      return res.status(500).json({ message: 'Erro interno ao buscar adotantes.' });
-    }
+  try {
+    const adopters = await Adopter.find({});
+    return res.status(200).json(adopters);
+  } catch (err) {
+    console.error('Erro ao buscar adotantes:', err);
+    return res.status(500).json({ message: 'Erro interno ao buscar adotantes.' });
   }
+}
 
 // Atualização de perfil (dados básicos do adotante)
 async function updateAdopterProfile(req, res) {
@@ -150,61 +151,61 @@ async function updateAdopterProfile(req, res) {
   }
 }
 
-  // Função para excluir um adotante
-  async function deleteAdopter(req, res) {
-    try {
-      const { adopterId } = req.params; // Pegando o ID do adotante da URL
-  
-      // Converte o ID para ObjectId caso necessário
-      if (!mongoose.Types.ObjectId.isValid(adopterId)) {
-        return res.status(400).json({ message: "ID do adotante inválido." });
-      }
-  
-      // Verifica se o adotante existe
-      const adopter = await Adopter.findById(adopterId);
-      if (!adopter) {
-        return res.status(404).json({ message: "Adotante não encontrado." });
-      }
-  
-      // Exclui o adotante do banco de dados
-      await Adopter.findByIdAndDelete(adopterId);
-  
-      res.status(200).json({ message: "Adotante excluído com sucesso." });
-    } catch (error) {
-      console.error("Erro ao excluir adotante:", error);
-      res.status(500).json({ message: "Erro interno no servidor." });
+// Função para excluir um adotante
+async function deleteAdopter(req, res) {
+  try {
+    const { adopterId } = req.params; // Pegando o ID do adotante da URL
+
+    // Converte o ID para ObjectId caso necessário
+    if (!mongoose.Types.ObjectId.isValid(adopterId)) {
+      return res.status(400).json({ message: "ID do adotante inválido." });
     }
-  }
 
-  // Buscar adotante por ID
-  async function getAdopterById(req, res) {
-    try {
-      const { adopterId } = req.params;
-
-      if (!mongoose.Types.ObjectId.isValid(adopterId)) {
-        return res.status(400).json({ message: "ID do adotante inválido." });
-      }
-
-      const adopter = await Adopter.findById(adopterId).select("-password"); // ocultar senha
-
-      if (!adopter) {
-        return res.status(404).json({ message: "Adotante não encontrado." });
-      }
-
-      res.status(200).json(adopter);
-    } catch (error) {
-      console.error("Erro ao buscar adotante:", error);
-      res.status(500).json({ message: "Erro interno no servidor." });
+    // Verifica se o adotante existe
+    const adopter = await Adopter.findById(adopterId);
+    if (!adopter) {
+      return res.status(404).json({ message: "Adotante não encontrado." });
     }
+
+    // Exclui o adotante do banco de dados
+    await Adopter.findByIdAndDelete(adopterId);
+
+    res.status(200).json({ message: "Adotante excluído com sucesso." });
+  } catch (error) {
+    console.error("Erro ao excluir adotante:", error);
+    res.status(500).json({ message: "Erro interno no servidor." });
   }
+}
+
+// Buscar adotante por ID
+async function getAdopterById(req, res) {
+  try {
+    const { adopterId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(adopterId)) {
+      return res.status(400).json({ message: "ID do adotante inválido." });
+    }
+
+    const adopter = await Adopter.findById(adopterId).select("-password"); // ocultar senha
+
+    if (!adopter) {
+      return res.status(404).json({ message: "Adotante não encontrado." });
+    }
+
+    res.status(200).json(adopter);
+  } catch (error) {
+    console.error("Erro ao buscar adotante:", error);
+    res.status(500).json({ message: "Erro interno no servidor." });
+  }
+}
 
 
-  module.exports = {
-    createAdopter,
-    updateSafeAdopter,
-    listAdopters,
-    updateAdopterProfile,
-    deleteAdopter,
-    getAdopterById,
-  };
+module.exports = {
+  createAdopter,
+  updateSafeAdopter,
+  listAdopters,
+  updateAdopterProfile,
+  deleteAdopter,
+  getAdopterById,
+};
 
