@@ -1,7 +1,9 @@
 const Ong = require('../models/ong');
-const Pet = require('../models/pet'); // Adicione esta importação
+const Pet = require('../models/pet');
+const Adopter = require('../models/adopter'); // Adicionar esta linha
 const bcrypt = require('bcrypt');
-const { sendWelcomeEmail } = require('../services/emailService');
+const crypto = require('crypto'); // Adicionar esta importação
+const { sendWelcomeEmail, sendDeleteEmail } = require('../services/emailService');
 
 // Função para criar uma nova ONG
 async function createOng(req, res) {
@@ -35,14 +37,37 @@ async function createOng(req, res) {
       role: role
     };
 
+    // Chave secreta para o hash determinístico
+    const APP_SECRET = process.env.APP_SECRET || 'suaChaveSecretaAqui';
+
     // Defina os campos com base no tipo de organização
     if (document) {
       if (document.type === "CNPJ") {
-        ongData.cnpj = document.number;
-        // Não defina cpf como null, apenas omita o campo
+        // Hash determinístico para CNPJ
+        const cnpjHash = crypto
+          .createHmac('sha256', APP_SECRET)
+          .update(document.number)
+          .digest('hex');
+
+        // Hash bcrypt para CNPJ (segurança)
+        const salt = await bcrypt.genSalt(10);
+        const hashedCnpj = await bcrypt.hash(document.number, salt);
+
+        ongData.cnpj = hashedCnpj;
+        ongData.cnpjHash = cnpjHash;
       } else if (document.type === "CPF") {
-        ongData.cpf = document.number;
-        // Não defina cnpj como null, apenas omita o campo
+        // Hash determinístico para CPF
+        const cpfHash = crypto
+          .createHmac('sha256', APP_SECRET)
+          .update(document.number)
+          .digest('hex');
+
+        // Hash bcrypt para CPF (segurança)
+        const salt = await bcrypt.genSalt(10);
+        const hashedCpf = await bcrypt.hash(document.number, salt);
+
+        ongData.cpf = hashedCpf;
+        ongData.cpfHash = cpfHash;
       }
     }
 
@@ -53,7 +78,7 @@ async function createOng(req, res) {
         city: address.city || "",
         street: address.street || "",
         number: address.number || "",
-        neighborhood: address.neighborhood || "", // Note a diferença de nomes
+        neighborhood: address.neighborhood || "",
         cep: address.zipCode || "",
         complement: address.complement || ""
       };
@@ -61,10 +86,10 @@ async function createOng(req, res) {
 
     // Configurar redes sociais
     if (socialMedia) {
-      ongData.socialMidia = { // Note que no modelo é socialMidia, não socialMedia
+      ongData.socialMidia = {
         instagram: socialMedia.instagram || "",
         facebook: socialMedia.facebook || "",
-        site: socialMedia.website || "" // Note que aqui é site, não website
+        site: socialMedia.website || ""
       };
     }
 
@@ -97,28 +122,49 @@ async function createOng(req, res) {
       });
     }
 
-    // Verificar se já existe ONG com mesmo email, cnpj ou cpf
-    console.log("Verificando se ONG já existe...");
-    const filtroExistente = { $or: [{ email: ongData.email }] };
-
-    // Apenas verifica CNPJ se for um valor válido
-    if (ongData.cnpj && ongData.cnpj !== "") {
-      filtroExistente.$or.push({ cnpj: ongData.cnpj });
-    }
-
-    // Apenas verifica CPF se for um valor válido
-    if (ongData.cpf && ongData.cpf !== "") {
-      filtroExistente.$or.push({ cpf: ongData.cpf });
-    }
-
-    const existingOng = await Ong.findOne(filtroExistente);
-
-    if (existingOng) {
-      console.log("ONG já existe no sistema");
+    // Verificar se já existe ONG ou ADOTANTE com mesmo email, cnpj ou cpf
+    console.log("Verificando se email já existe...");
+    
+    // Verificar email em AMBAS as coleções
+    const existingOng = await Ong.findOne({ email: ongData.email });
+    const existingAdopter = await Adopter.findOne({ email: ongData.email });
+    
+    if (existingOng || existingAdopter) {
+      console.log("Email já existe no sistema");
       return res.status(400).json({
         success: false,
-        message: 'Email, CNPJ ou CPF já cadastrado no sistema'
+        message: 'Este e-mail já está cadastrado no sistema'
       });
+    }
+    
+    // Verificar apenas CPF/CNPJ hash em ONGs
+    const filtroDocumento = { $or: [] };
+    
+    // Apenas verifica CNPJ Hash se for um valor válido
+    if (ongData.cnpjHash) {
+      filtroDocumento.$or.push({ cnpjHash: ongData.cnpjHash });
+    }
+
+    // Apenas verifica CPF Hash se for um valor válido
+    if (ongData.cpfHash) {
+      filtroDocumento.$or.push({ cpfHash: ongData.cpfHash });
+    }
+    
+    if (filtroDocumento.$or.length > 0) {
+      const existingDoc = await Ong.findOne(filtroDocumento);
+      if (existingDoc) {
+        let errorMessage = '';
+        if (ongData.cnpjHash && existingDoc.cnpjHash === ongData.cnpjHash) {
+          errorMessage = 'CNPJ já cadastrado';
+        } else if (ongData.cpfHash && existingDoc.cpfHash === ongData.cpfHash) {
+          errorMessage = 'CPF já cadastrado';
+        }
+        
+        return res.status(400).json({
+          success: false,
+          message: errorMessage
+        });
+      }
     }
 
     // Criptografar a senha
@@ -134,11 +180,15 @@ async function createOng(req, res) {
     // Salvar a ONG no banco de dados
     console.log("Salvando ONG no banco de dados...");
     const savedOng = await newOng.save();
-    await sendWelcomeEmail(ongData.email, ongData.name, true); // Envia e-mail de boas-vindas para ONG
+    await sendWelcomeEmail(ongData.email, ongData.name, true);
 
-    // Remover a senha do objeto de resposta
+    // Remover campos sensíveis do objeto de resposta
     const ongResponse = savedOng.toObject();
     delete ongResponse.password;
+    delete ongResponse.cpf;
+    delete ongResponse.cnpj;
+    delete ongResponse.cpfHash;
+    delete ongResponse.cnpjHash;
 
     res.status(201).json({
       success: true,
@@ -177,6 +227,9 @@ async function deleteOng(req, res) {
       });
     }
 
+    // Capturar email e nome antes de deletar
+    const { email, name } = ong;
+
     // Primeiro, deletar todos os pets associados a esta ONG
     console.log(`Deletando todos os pets da ONG com ID: ${id}`);
     const petsDeleteResult = await Pet.deleteMany({ ongId: id });
@@ -186,6 +239,15 @@ async function deleteOng(req, res) {
     await Ong.findByIdAndDelete(id);
 
     console.log(`ONG com ID ${id} e todos seus pets deletados com sucesso`);
+
+    // Enviar email de confirmação de exclusão
+    try {
+      await sendDeleteEmail(email, name, true); // true indica que é uma ONG
+      console.log(`Email de confirmação de exclusão enviado para: ${email}`);
+    } catch (emailError) {
+      console.error(`Erro ao enviar email de confirmação: ${emailError.message}`);
+      // Continue o processo mesmo se o envio de email falhar
+    }
 
     res.status(200).json({
       success: true,

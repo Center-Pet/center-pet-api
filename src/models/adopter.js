@@ -6,6 +6,7 @@ const adopterSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true }, //Email do adotante
   password: { type: String, required: true }, //Senha do adotante
   cpf: { type: String, required: true, unique: true }, //CPF do adotante
+  cpfHash: { type: String, required: true, unique: true},
   registerDate: { type: Date, default: Date.now }, //Data de registro do adotante
 
 

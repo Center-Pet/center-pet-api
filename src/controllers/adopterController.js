@@ -1,7 +1,10 @@
 const bcrypt = require('bcrypt');
 const Adopter = require('../models/adopter');
+const Ong = require('../models/ong'); // Adicionar esta linha
 const mongoose = require('mongoose');
-const { sendWelcomeEmail } = require('../services/emailService');
+const { sendWelcomeEmail, sendDeleteEmail } = require('../services/emailService');
+const crypto = require('crypto'); // Módulo nativo do Node
+
 
 // Função para converter "true"/"false" (strings) em booleanos
 const parseBooleanFields = (data) => {
@@ -29,26 +32,53 @@ async function createAdopter(req, res) {
       return res.status(400).json({ message: "Todos os campos são obrigatórios." });
     }
 
-    // Verifica duplicidade
-    const conflict = await Adopter.findOne({ $or: [{ cpf }, { email }] });
-    if (conflict) {
+    // Criar hash determinístico para o CPF
+    const APP_SECRET = process.env.APP_SECRET || 'suaChaveSecretaAqui'; 
+    const cpfHash = crypto
+      .createHmac('sha256', APP_SECRET)
+      .update(cpf)
+      .digest('hex');
+
+    // Verifica duplicidade pelo hash determinístico
+    const existingCpf = await Adopter.findOne({ cpfHash });
+    if (existingCpf) {
       return res
         .status(409)
-        .json({ message: "Já existe um adotante com esse CPF ou e-mail." });
+        .json({ message: "Já existe um adotante com esse CPF." });
     }
 
-    // Hash da senha
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // === NOVA VERIFICAÇÃO AQUI ===
+    // Verifica duplicidade de email em AMBAS as coleções
+    const existingEmail = await Adopter.findOne({ email });
+    const existingOngEmail = await Ong.findOne({ email });
+    
+    if (existingEmail || existingOngEmail) {
+      return res
+        .status(409)
+        .json({ message: "Este e-mail já está cadastrado no sistema." });
+    }
+    // === FIM DA NOVA VERIFICAÇÃO ===
+
+    // Hash da senha com bcrypt 
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+    
+    // Hash do CPF com bcrypt
+    const hashedCpf = await bcrypt.hash(cpf, salt);
 
     // Cria e salva
     const newAdopter = new Adopter({
-      fullName, cpf, email, password: hashedPassword,
-      safeAdopter: false, // default
+      fullName, 
+      cpf: hashedCpf,
+      cpfHash,
+      email, 
+      password: hashedPassword,
+      safeAdopter: false,
     });
     await newAdopter.save();
-    await sendWelcomeEmail(email, fullName, false); // Envia e-mail de boas-vindas para adotante
+    await sendWelcomeEmail(email, fullName, false);
 
-    const { password: _, ...adopterData } = newAdopter.toObject();
+    const { password: _, cpf: __, cpfHash: ___, ...adopterData } = newAdopter.toObject();
     res.status(201).json({ message: "Adotante criado com sucesso!", adopter: adopterData });
   } catch (error) {
     console.error("Erro ao criar adotante:", error);
@@ -167,8 +197,20 @@ async function deleteAdopter(req, res) {
       return res.status(404).json({ message: "Adotante não encontrado." });
     }
 
+    // Capturar email e nome antes de deletar
+    const { email, fullName } = adopter;
+
     // Exclui o adotante do banco de dados
     await Adopter.findByIdAndDelete(adopterId);
+    
+    // Envia e-mail de confirmação de exclusão
+    try {
+      await sendDeleteEmail(email, fullName, false); // false indica que não é uma ONG
+      console.log(`Email de confirmação de exclusão enviado para: ${email}`);
+    } catch (emailError) {
+      console.error(`Erro ao enviar email de confirmação: ${emailError.message}`);
+      // Continue o processo mesmo se o envio de email falhar
+    }
 
     res.status(200).json({ message: "Adotante excluído com sucesso." });
   } catch (error) {

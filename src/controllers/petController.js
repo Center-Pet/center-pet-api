@@ -18,9 +18,10 @@ async function createPet(req, res) {
       castrated,
       dewormed,
       specialCondition,
-      waitingTime,
+      waitingTime,  
       ongId,
       imagens, // Array de URLs de imagens
+      status,
     } = req.body;
 
     // Criação do pet
@@ -44,6 +45,7 @@ async function createPet(req, res) {
       waitingTime,
       ongId,
       image: imagens, // Array de URLs de imagens
+      status: status || 'Disponível' // Use o valor recebido ou 'Disponível' como padrão
     });
 
     const savedPet = await newPet.save();

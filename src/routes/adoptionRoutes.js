@@ -1,5 +1,6 @@
 const express = require('express');
 const adoptionController = require('../controllers/adoptionController');
+const Adoption = require('../models/adoption'); // Adicionando importação
 
 const router = express.Router();
 
@@ -29,17 +30,20 @@ router.post('/accept/:id', adoptionController.acceptAdoption);
 router.post('/reject/:id', adoptionController.rejectAdoption);
 
 // Obter uma adoção por ID (esta deve ser a ÚLTIMA rota com parâmetro)
-// Mudar para getAllAdoptions porque getAdoptionByOngId não existe
-router.get('/:id', function getAdoptionById(req, res) {
+router.get('/:id', async function getAdoptionById(req, res) {
     try {
-        const adoption = Adoption.findById(req.params.id)
-            .then(adoption => {
-                if (!adoption) {
-                    return res.status(404).json({ message: 'Adoção não encontrada' });
-                }
-                res.status(200).json(adoption);
-            });
+        const adoption = await Adoption.findById(req.params.id)
+            .populate('petId')
+            .populate('userId')
+            .populate('ongId');
+            
+        if (!adoption) {
+            return res.status(404).json({ message: 'Adoção não encontrada' });
+        }
+        
+        res.status(200).json(adoption);
     } catch (err) {
+        console.error('Erro ao buscar adoção:', err);
         res.status(500).json({ message: 'Erro ao buscar adoção', error: err.message });
     }
 });
