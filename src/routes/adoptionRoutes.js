@@ -10,6 +10,9 @@ router.get('/', adoptionController.getAllAdoptions);
 // Buscar adoções pelo ID da ONG
 router.get('/by-ong/:ongId', adoptionController.getAdoptionsByOngId);
 
+// Buscar adoções por múltiplos IDs
+router.get('/by-ids', adoptionController.getAdoptionByIds);
+
 // Criar uma nova adoção
 router.post('/create', adoptionController.createAdoption);
 
@@ -18,6 +21,12 @@ router.put('/update/:id', adoptionController.updateAdoption);
 
 // Deletar uma adoção
 router.delete('/delete/:id', adoptionController.deleteAdoption);
+
+// Aceitar uma adoção
+router.post('/accept/:id', adoptionController.acceptAdoption);
+
+// Rejeitar uma adoção
+router.post('/reject/:id', adoptionController.rejectAdoption);
 
 // Obter uma adoção por ID (esta deve ser a ÚLTIMA rota com parâmetro)
 // Mudar para getAllAdoptions porque getAdoptionByOngId não existe

@@ -1,7 +1,15 @@
 const Adoption = require('../models/adoption');
+const Pet = require('../models/pet');
+const Ong = require('../models/ong');
+const Adopter = require('../models/adopter');
+const {
+    sendAdoptionRequestEmail,
+    sendAdoptionApprovedEmail,
+    sendAdoptionRejectedEmail
+} = require('../services/emailService');
 
 // Listar todas as adoções
-async function getAllAdoptions(req, res){
+async function getAllAdoptions(req, res) {
     try {
         const adoptions = await Adoption.find();
         res.status(200).json(adoptions);
@@ -11,21 +19,21 @@ async function getAllAdoptions(req, res){
 };
 
 // Buscar adoções por ID da ONG
-async function getAdoptionsByOngId(req, res){
+async function getAdoptionsByOngId(req, res) {
     try {
         const { ongId } = req.params;
-        
+
         const adoptions = await Adoption.find({ ongId })
             .populate('petId', 'name image')  // Popula dados básicos do pet
             .populate('userId', 'name email'); // Popula dados básicos do usuário
-        
+
         if (adoptions.length === 0) {
-            return res.status(200).json({ 
+            return res.status(200).json({
                 message: 'Nenhuma adoção encontrada para esta ONG',
                 adoptions: []
             });
         }
-        
+
         res.status(200).json({
             count: adoptions.length,
             adoptions
@@ -36,7 +44,7 @@ async function getAdoptionsByOngId(req, res){
 }
 
 // Criar uma nova adoção
-async function createAdoption(req, res){
+async function createAdoption(req, res) {
     try {
         const {
             userId,
@@ -44,25 +52,50 @@ async function createAdoption(req, res){
             ongId,
             status,
             requestDate
-            //transportationDate,
-            //startDateAdjustment,
-            //endDateAdjustment
         } = req.body;
 
+        console.log("Recebida solicitação de adoção:", req.body);
+
         // Criação de uma nova adoção com base no schema
-        const adoption = new Adoption({
+        const adoption = await Adoption.create({
             userId,
             petId,
             ongId,
-            status: status || 'requestReceived', // Define o status padrão como 'requestReceived' se não for fornecido
-            requestDate: requestDate || new Date(), // Define a data de solicitação como a data atual se não for fornecida
-            //transportationDate,
-            //startDateAdjustment,
-            //endDateAdjustment
+            status: status || 'requestReceived',
+            requestDate: requestDate || new Date(),
         });
 
-        // Salvando no banco de dados
-        await adoption.save();
+        // Gere o link com o ID da adoção como primeiro parâmetro!
+        const adoptionLink = `http://localhost:5173/adoption/${adoption._id}/${petId}/${userId}/${ongId}`;
+
+        // Buscar dados para o e-mail
+        const [adopter, pet, ong] = await Promise.all([
+            Adopter.findById(userId),
+            Pet.findById(petId),
+            Ong.findById(ongId)
+        ]);
+
+        // Enviar e-mail para a ONG
+        if (ong && adopter && pet) {
+            console.log("Dados para envio de e-mail:", {
+                ongEmail: ong?.email,
+                adopterName: adopter?.fullName || adopter?.name,
+                petName: pet?.name,
+                petId: pet?._id,
+                adopterId: adopter?._id,
+                ongId: ong?._id
+            });
+            await sendAdoptionRequestEmail(
+                ong.email,
+                adopter.fullName || adopter.name,
+                pet.name,
+                pet._id,
+                adopter._id,
+                ong._id,
+                adoptionLink // Passe o link correto!
+            );
+        }
+
         res.status(201).json(adoption);
     } catch (err) {
         res.status(400).json({ message: 'Erro ao criar adoção', error: err.message });
@@ -70,7 +103,7 @@ async function createAdoption(req, res){
 };
 
 // Atualizar uma adoção existente
-async function updateAdoption(req, res){
+async function updateAdoption(req, res) {
     try {
         // Filtra apenas os campos permitidos pelo schema
         const allowedFields = [
@@ -106,7 +139,7 @@ async function updateAdoption(req, res){
 };
 
 // Deletar uma adoção
-async function deleteAdoption(req, res){
+async function deleteAdoption(req, res) {
     try {
         // Busca a adoção antes de deletar para garantir que existe e para possíveis hooks do schema
         const adoption = await Adoption.findById(req.params.id);
@@ -120,10 +153,106 @@ async function deleteAdoption(req, res){
     }
 };
 
+// Aceitar uma adoção
+async function acceptAdoption(req, res) {
+    try {
+        const { id } = req.params;
+        console.log("Recebido adoptionId:", id);
+
+        const adoption = await Adoption.findById(id);
+
+        if (!adoption) {
+            console.log("Adoção não encontrada!");
+            return res.status(404).json({ message: 'Adoção não encontrada' });
+        }
+
+        // Não permite alterar se já foi finalizada
+        if (adoption.status === 'approved' || adoption.status === 'rejected') {
+            return res.status(400).json({ message: 'Adoção já finalizada e não pode ser alterada.' });
+        }
+
+        adoption.status = 'approved';
+        await adoption.save();
+
+        const adopter = await Adopter.findById(adoption.userId);
+        const pet = await Pet.findById(adoption.petId);
+
+        if (!adopter || !pet) {
+            console.log("Adotante ou pet não encontrados!");
+            return res.status(404).json({ message: 'Adotante ou pet não encontrados' });
+        }
+
+        await sendAdoptionApprovedEmail(adopter.email, adopter.fullName || adopter.name, pet.name);
+
+        res.status(200).json({ message: 'Adoção aprovada e email enviado', adoption });
+    } catch (err) {
+        console.error("Erro ao aceitar adoção:", err);
+        res.status(500).json({ message: 'Erro ao aprovar adoção', error: err.message });
+    }
+}
+
+// Rejeitar uma adoção
+async function rejectAdoption(req, res) {
+    try {
+        const { id } = req.params;
+        console.log("Recebido adoptionId:", id);
+
+        const adoption = await Adoption.findById(id);
+
+        if (!adoption) {
+            console.log("Adoção não encontrada!");
+            return res.status(404).json({ message: 'Adoção não encontrada' });
+        }
+
+        // Não permite alterar se já foi finalizada
+        if (adoption.status === 'approved' || adoption.status === 'rejected') {
+            return res.status(400).json({ message: 'Adoção já finalizada e não pode ser alterada.' });
+        }
+
+        adoption.status = 'rejected';
+        await adoption.save();
+
+        const adopter = await Adopter.findById(adoption.userId);
+        const pet = await Pet.findById(adoption.petId);
+
+        if (!adopter || !pet) {
+            console.log("Adotante ou pet não encontrados!");
+            return res.status(404).json({ message: 'Adotante ou pet não encontrados' });
+        }
+
+        await sendAdoptionRejectedEmail(adopter.email, adopter.fullName || adopter.name, pet.name);
+
+        res.status(200).json({ message: 'Adoção rejeitada e email enviado', adoption });
+    } catch (err) {
+        console.error("Erro ao rejeitar adoção:", err);
+        res.status(500).json({ message: 'Erro ao rejeitar adoção', error: err.message });
+    }
+}
+
+// Buscar adoção por petId, userId e ongId
+async function getAdoptionByIds(req, res) {
+    try {
+        const { petId, userId, ongId } = req.query;
+        if (!petId || !userId || !ongId) {
+            return res.status(400).json({ message: 'Parâmetros obrigatórios não informados.' });
+        }
+        const adoption = await Adoption.findOne({ petId, userId, ongId });
+        if (!adoption) {
+            return res.status(404).json({ message: 'Adoção não encontrada.' });
+        }
+        res.status(200).json(adoption);
+    } catch (err) {
+        res.status(500).json({ message: 'Erro ao buscar adoção', error: err.message });
+    }
+}
+
 module.exports = {
     getAllAdoptions,
     getAdoptionsByOngId,
     createAdoption,
     updateAdoption,
-    deleteAdoption
+    deleteAdoption,
+    getAdoptionByIds,
+    rejectAdoption,
+    acceptAdoption
 };

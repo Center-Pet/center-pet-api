@@ -3,6 +3,9 @@ const nodemailer = require("nodemailer");
 const welcomeAdopterTemplate = require("../emailTemplates/welcomeAdopter");
 const welcomeOngTemplate = require("../emailTemplates/welcomeOng");
 const resetPasswordTemplate = require("../emailTemplates/resetPassword");
+const adoptionRequestTemplate = require("../emailTemplates/adoptionRequest");
+const adoptionApprovedTemplate = require("../emailTemplates/adoptionApproved");
+const adoptionRejectedTemplate = require("../emailTemplates/adoptionRejected");
 require("dotenv").config();
 
 const transporter = nodemailer.createTransport({
@@ -68,7 +71,91 @@ async function sendResetPasswordEmail(to, name, resetLink) {
   }
 }
 
+/**
+ * Envia e-mail de pedido de adoção para a ONG.
+ * @param {string} to - E-mail da ONG
+ * @param {string} adopterName - Nome do adotante
+ * @param {string} petName - Nome do pet
+ */
+async function sendAdoptionRequestEmail(to, adopterName, petName, petId, userId, ongId, adoptionLink) {
+  console.log("Chamando sendAdoptionRequestEmail com:", {
+    to, adopterName, petName, petId, userId, ongId, adoptionLink
+  });
+
+  const subject = "Novo pedido de adoção recebido!";
+  const html = adoptionRequestTemplate(adopterName, petName, adoptionLink);
+
+  const mailOptions = {
+    from: `"Center Pet" <${process.env.EMAIL_USER}>`,
+    to,
+    subject,
+    html,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`✉️ Pedido de adoção enviado para ${to}`);
+  } catch (error) {
+    console.error("❌ Erro ao enviar e-mail de pedido de adoção:", error, {
+      to, adopterName, petName, petId, userId, ongId, adoptionLink
+    });
+  }
+}
+
+/**
+ * Envia e-mail de aprovação de adoção para o adotante.
+ * @param {string} to - E-mail do adotante
+ * @param {string} adopterName - Nome do adotante
+ * @param {string} petName - Nome do pet
+ */
+async function sendAdoptionApprovedEmail(to, adopterName, petName) {
+  const subject = "Adoção aprovada!";
+  const html = adoptionApprovedTemplate(adopterName, petName);
+
+  const mailOptions = {
+    from: `"Center Pet" <${process.env.EMAIL_USER}>`,
+    to,
+    subject,
+    html,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`✉️ Adoção aprovada enviada para ${to}`);
+  } catch (error) {
+    console.error("❌ Erro ao enviar e-mail de aprovação de adoção:", error);
+  }
+}
+
+/**
+ * Envia e-mail de recusa de adoção para o adotante.
+ * @param {string} to - E-mail do adotante
+ * @param {string} adopterName - Nome do adotante
+ * @param {string} petName - Nome do pet
+ */
+async function sendAdoptionRejectedEmail(to, adopterName, petName) {
+  const subject = "Adoção não aprovada";
+  const html = adoptionRejectedTemplate(adopterName, petName);
+
+  const mailOptions = {
+    from: `"Center Pet" <${process.env.EMAIL_USER}>`,
+    to,
+    subject,
+    html,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`✉️ Adoção recusada enviada para ${to}`);
+  } catch (error) {
+    console.error("❌ Erro ao enviar e-mail de recusa de adoção:", error);
+  }
+}
+
 module.exports = {
   sendWelcomeEmail,
   sendResetPasswordEmail,
+  sendAdoptionRequestEmail,
+  sendAdoptionApprovedEmail,
+  sendAdoptionRejectedEmail,
 };
