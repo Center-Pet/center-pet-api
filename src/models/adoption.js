@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 
 const adoptionSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, //ID do usuário que está adotando
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'Adopter', required: true }, //ID do usuário que está adotando
   petId: { type: mongoose.Schema.Types.ObjectId, ref: 'Pet', required: true }, //ID do pet que está sendo adotado
   ongId: { type: mongoose.Schema.Types.ObjectId, ref: 'Ong', required: true }, //ID da ONG responsável pelo pet
   status: {
