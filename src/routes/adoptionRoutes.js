@@ -4,30 +4,41 @@ const Adoption = require('../models/adoption'); // Adicionando importação
 
 const router = express.Router();
 
+const {
+    getAllAdoptions,
+    getAdoptionsByOngId,
+    getAdoptionByIds,
+    createAdoption,
+    updateAdoption,
+    deleteAdoption,
+    acceptAdoption,
+    rejectAdoption
+} = adoptionController;
+
 // Listar todas as adoções
-router.get('/', adoptionController.getAllAdoptions);
+router.get('/', getAllAdoptions);
 
 // IMPORTANTE: Rotas específicas primeiro!
 // Buscar adoções pelo ID da ONG
-router.get('/by-ong/:ongId', adoptionController.getAdoptionsByOngId);
+router.get('/by-ong/:ongId', getAdoptionsByOngId);
 
 // Buscar adoções por múltiplos IDs
-router.get('/by-ids', adoptionController.getAdoptionByIds);
+router.get('/by-ids', getAdoptionByIds);
 
 // Criar uma nova adoção
-router.post('/create', adoptionController.createAdoption);
+router.post('/create', createAdoption);
 
 // Atualizar uma adoção existente
-router.put('/update/:id', adoptionController.updateAdoption);
+router.patch('/update/:id', updateAdoption);
 
 // Deletar uma adoção
-router.delete('/delete/:id', adoptionController.deleteAdoption);
+router.delete('/delete/:id', deleteAdoption);
 
 // Aceitar uma adoção
-router.post('/accept/:id', adoptionController.acceptAdoption);
+router.post('/accept/:id', acceptAdoption);
 
 // Rejeitar uma adoção
-router.post('/reject/:id', adoptionController.rejectAdoption);
+router.post('/reject/:id', rejectAdoption);
 
 // Obter uma adoção por ID (esta deve ser a ÚLTIMA rota com parâmetro)
 router.get('/:id', async function getAdoptionById(req, res) {
