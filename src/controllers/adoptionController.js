@@ -78,8 +78,8 @@ async function createAdoption(req, res) {
             requestDate: requestDate || new Date(),
         });
 
-        // Gere o link com o ID da adoção
-        const adoptionLink = `https://centerpet.netlify.app/${adoption._id}`;
+        // Gere o link com o ID da adoção usando a variável de ambiente
+        const adoptionLink = `${process.env.FRONTEND_URL}/adoption/${adoption._id}`;
 
         // Buscar dados para o e-mail
         const [adopter, pet, ong] = await Promise.all([
