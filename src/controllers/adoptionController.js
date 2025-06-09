@@ -69,8 +69,6 @@ async function createAdoption(req, res) {
             });
         }
 
-        console.log("Recebida solicitação de adoção:", req.body);
-
         // Criação de uma nova adoção com base no schema
         const adoption = await Adoption.create({
             userId,
@@ -80,8 +78,8 @@ async function createAdoption(req, res) {
             requestDate: requestDate || new Date(),
         });
 
-        // Gere o link com o ID da adoção como primeiro parâmetro!
-        const adoptionLink = `https://centerpet-api.onrender.com/api/adoption/${adoption._id}/${petId}/${userId}/${ongId}`;
+        // Gere o link com o ID da adoção
+        const adoptionLink = `https://centerpet.netlify.app/${adoption._id}`;
 
         // Buscar dados para o e-mail
         const [adopter, pet, ong] = await Promise.all([
@@ -92,14 +90,6 @@ async function createAdoption(req, res) {
 
         // Enviar e-mail para a ONG
         if (ong && adopter && pet) {
-            console.log("Dados para envio de e-mail:", {
-                ongEmail: ong?.email,
-                adopterName: adopter?.fullName || adopter?.name,
-                petName: pet?.name,
-                petId: pet?._id,
-                adopterId: adopter?._id,
-                ongId: ong?._id
-            });
             await sendAdoptionRequestEmail(
                 ong.email,
                 adopter.fullName || adopter.name,
@@ -107,7 +97,7 @@ async function createAdoption(req, res) {
                 pet._id,
                 adopter._id,
                 ong._id,
-                adoptionLink // Passe o link correto!
+                adoptionLink
             );
         }
 
