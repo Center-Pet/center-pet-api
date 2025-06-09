@@ -66,7 +66,7 @@ async function createAdoption(req, res) {
         });
 
         // Gere o link com o ID da adoção como primeiro parâmetro!
-        const adoptionLink = `http://localhost:5173/adoption/${adoption._id}/${petId}/${userId}/${ongId}`;
+        const adoptionLink = `https://centerpet-api.onrender.com/api/adoption/${adoption._id}/${petId}/${userId}/${ongId}`;
 
         // Buscar dados para o e-mail
         const [adopter, pet, ong] = await Promise.all([
