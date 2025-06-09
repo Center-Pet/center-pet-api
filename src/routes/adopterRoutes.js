@@ -13,7 +13,7 @@ const {
 router.post('/register', createAdopter);
 
 // Rota de atualização do formulário completo
-router.post('/updateSafeAdopter', updateSafeAdopter);
+router.patch('/updateSafeAdopter', updateSafeAdopter);
 
 // Rota para listar todos os adotantes
 router.get('/', listAdopters);
