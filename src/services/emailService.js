@@ -24,8 +24,8 @@ const transporter = nodemailer.createTransport({
  */
 async function sendWelcomeEmail(to, name, isONG = false) {
   const subject = isONG
-    ? "Bem-vinda à Center Pet, ONG querida!"
-    : "Bem-vindo à Center Pet, herói dos pets!";
+    ? "Bem-vinda à Center Pet, vamos achar um lar para seu pet!"
+    : "Bem-vindo à Center Pet, vamos achar um amigo?";
 
   const html = isONG
     ? welcomeOngTemplate(name)
