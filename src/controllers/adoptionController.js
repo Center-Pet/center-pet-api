@@ -25,8 +25,7 @@ async function getAdoptionsByOngId(req, res) {
 
         const adoptions = await Adoption.find({ ongId })
             .populate('petId', 'name image')  // Popula dados básicos do pet
-            .populate('userId', 'name email'); // Popula dados básicos do usuário
-
+            .populate('userId', 'fullName email phone city')
         if (adoptions.length === 0) {
             return res.status(200).json({
                 message: 'Nenhuma adoção encontrada para esta ONG',
