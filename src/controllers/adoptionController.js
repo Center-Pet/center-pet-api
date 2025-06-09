@@ -53,6 +53,22 @@ async function createAdoption(req, res) {
             requestDate
         } = req.body;
 
+        // Verifica se já existe uma solicitação recente (últimos 30 dias)
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        const recentAdoption = await Adoption.findOne({
+            userId,
+            petId,
+            requestDate: { $gte: thirtyDaysAgo }
+        });
+
+        if (recentAdoption) {
+            return res.status(400).json({ 
+                message: 'Você já possui uma solicitação de adoção para este pet nos últimos 30 dias.' 
+            });
+        }
+
         console.log("Recebida solicitação de adoção:", req.body);
 
         // Criação de uma nova adoção com base no schema
