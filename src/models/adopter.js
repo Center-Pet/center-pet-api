@@ -34,6 +34,7 @@ const adopterSchema = new mongoose.Schema({
   allergyDetails: { type: String}, //Como vão lidar com isso(se houver)
   familyAgreement: { type: Boolean}, //Todos da casa concordam com a adoção
   familyAgreementDetails: { type: String}, //Como vão lidar com isso(se houver)
+  environmentImages: { type: [String], default: [] }, //Imagens do ambiente do adotante
   
   //Experiência com animais
   hasOrHadPets: { type: String,enum: ["Já tive e tenho", "Já tive, mas não tenho nenhum no momento",'Será o meu primeiro'],},
