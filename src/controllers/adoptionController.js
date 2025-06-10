@@ -179,15 +179,26 @@ async function acceptAdoption(req, res) {
         adoption.status = 'approved';
         await adoption.save();
 
-        const adopter = await Adopter.findById(adoption.userId);
-        const pet = await Pet.findById(adoption.petId);
+        const [adopter, pet, ong] = await Promise.all([
+            Adopter.findById(adoption.userId),
+            Pet.findById(adoption.petId),
+            Ong.findById(adoption.ongId)
+        ]);
 
-        if (!adopter || !pet) {
-            console.log("Adotante ou pet não encontrados!");
-            return res.status(404).json({ message: 'Adotante ou pet não encontrados' });
+        if (!adopter || !pet || !ong) {
+            console.log("Adotante, pet ou ONG não encontrados!");
+            return res.status(404).json({ message: 'Adotante, pet ou ONG não encontrados' });
         }
 
-        await sendAdoptionApprovedEmail(adopter.email, adopter.fullName || adopter.name, pet.name);
+        // Preparar dados de contato da ONG
+        const ongContact = {
+            whatsapp: ong.phone,
+            email: ong.email,
+            instagram: ong.socialMidia?.instagram,
+            facebook: ong.socialMidia?.facebook
+        };
+
+        await sendAdoptionApprovedEmail(adopter.email, adopter.fullName || adopter.name, pet.name, ongContact);
 
         res.status(200).json({ message: 'Adoção aprovada e email enviado', adoption });
     } catch (err) {

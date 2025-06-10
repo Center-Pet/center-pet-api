@@ -107,10 +107,15 @@ async function sendAdoptionRequestEmail(to, adopterName, petName, petId, userId,
  * @param {string} to - E-mail do adotante
  * @param {string} adopterName - Nome do adotante
  * @param {string} petName - Nome do pet
+ * @param {Object} ongContact - Dados de contato da ONG
+ * @param {string} ongContact.whatsapp - Número do WhatsApp da ONG
+ * @param {string} ongContact.email - E-mail da ONG
+ * @param {string} ongContact.instagram - Instagram da ONG
+ * @param {string} ongContact.facebook - Facebook da ONG
  */
-async function sendAdoptionApprovedEmail(to, adopterName, petName) {
+async function sendAdoptionApprovedEmail(to, adopterName, petName, ongContact) {
   const subject = "Adoção aprovada!";
-  const html = adoptionApprovedTemplate(adopterName, petName);
+  const html = adoptionApprovedTemplate(adopterName, petName, ongContact);
 
   const mailOptions = {
     from: `"Center Pet" <${process.env.EMAIL_USER}>`,
