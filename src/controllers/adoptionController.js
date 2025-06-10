@@ -110,38 +110,126 @@ async function createAdoption(req, res) {
 // Atualizar uma adoção existente
 async function updateAdoption(req, res) {
     try {
-        // Filtra apenas os campos permitidos pelo schema
-        const allowedFields = [
-            'userId',
-            'petId',
-            'ongId',
-            'status',
-            'requestDate'
-            //'transportationDate',
-            //'startDateAdjustment',
-            //'endDateAdjustment'
-        ];
-        const updateData = {};
-        for (const key of allowedFields) {
-            if (req.body[key] !== undefined) {
-                updateData[key] = req.body[key];
-            }
+        console.log('🔄 Iniciando atualização de adoção:', {
+            adoptionId: req.params.id,
+            newStatus: req.body.status,
+            ongId: req.user.id
+        });
+
+        const adoption = await Adoption.findById(req.params.id);
+        if (!adoption) {
+            console.log('❌ Adoção não encontrada:', req.params.id);
+            return res.status(404).json({ message: 'Adoção não encontrada.' });
         }
 
-        // Atualiza com validação do schema
-        const adoption = await Adoption.findByIdAndUpdate(
-            req.params.id,
-            { $set: updateData },
-            { new: true, runValidators: true }
-        );
-        if (!adoption) {
-            return res.status(404).json({ message: 'Adoção não encontrada' });
+        console.log('📝 Dados da adoção encontrada:', {
+            adoptionId: adoption._id,
+            petId: adoption.petId,
+            adopterId: adoption.adopterId,
+            status: adoption.status,
+            newStatus: req.body.status
+        });
+
+        // Verifica se a ONG é a dona do pet
+        const pet = await Pet.findById(adoption.petId);
+        if (!pet) {
+            console.log('❌ Pet não encontrado:', adoption.petId);
+            return res.status(404).json({ message: 'Pet não encontrado.' });
         }
-        res.status(200).json(adoption);
-    } catch (err) {
-        res.status(400).json({ message: 'Erro ao atualizar adoção', error: err.message });
+
+        console.log('📝 Dados do pet:', {
+            petId: pet._id,
+            ongId: pet.ongId,
+            requestedOngId: req.user.id
+        });
+
+        if (pet.ongId.toString() !== req.user.id) {
+            console.log('❌ ONG não autorizada:', {
+                petOngId: pet.ongId,
+                requestedOngId: req.user.id
+            });
+            return res.status(403).json({ message: 'Você não tem permissão para atualizar esta adoção.' });
+        }
+
+        // Busca os dados do adotante
+        const adopter = await Adopter.findById(adoption.adopterId);
+        if (!adopter) {
+            console.log('❌ Adotante não encontrado:', adoption.adopterId);
+            return res.status(404).json({ message: 'Adotante não encontrado.' });
+        }
+
+        console.log('📝 Dados do adotante:', {
+            adopterId: adopter._id,
+            email: adopter.email,
+            name: adopter.fullName
+        });
+
+        // Atualiza o status da adoção
+        adoption.status = req.body.status;
+        adoption.updatedAt = new Date();
+        await adoption.save();
+
+        console.log('✅ Adoção atualizada com sucesso:', {
+            adoptionId: adoption._id,
+            newStatus: adoption.status
+        });
+
+        // Envia e-mail baseado no novo status
+        try {
+            if (req.body.status === 'approved') {
+                console.log('📧 Iniciando envio de e-mail de aprovação...', {
+                    destinatario: adopter.email,
+                    nomeAdotante: adopter.fullName,
+                    nomePet: pet.name,
+                    dadosONG: {
+                        nome: req.user.name,
+                        email: req.user.email,
+                        telefone: req.user.phone
+                    }
+                });
+
+                await sendAdoptionApprovedEmail(
+                    adopter.email,
+                    adopter.fullName,
+                    pet.name,
+                    {
+                        name: req.user.name,
+                        email: req.user.email,
+                        phone: req.user.phone
+                    }
+                );
+
+                console.log('✅ E-mail de aprovação enviado com sucesso para:', adopter.email);
+            } else if (req.body.status === 'rejected') {
+                console.log('📧 Iniciando envio de e-mail de rejeição...', {
+                    destinatario: adopter.email,
+                    nomeAdotante: adopter.fullName,
+                    nomePet: pet.name
+                });
+
+                await sendAdoptionRejectedEmail(adopter.email, adopter.fullName, pet.name);
+
+                console.log('✅ E-mail de rejeição enviado com sucesso para:', adopter.email);
+            }
+        } catch (emailError) {
+            console.error('❌ Erro ao enviar e-mail:', {
+                error: emailError.message,
+                stack: emailError.stack,
+                status: req.body.status,
+                destinatario: adopter.email
+            });
+            // Não retornamos erro aqui para não impedir a atualização da adoção
+        }
+
+        res.status(200).json({ message: 'Adoção atualizada com sucesso.' });
+    } catch (error) {
+        console.error('❌ Erro ao atualizar adoção:', {
+            error: error.message,
+            stack: error.stack
+        });
+        res.status(500).json({ message: 'Erro ao atualizar adoção.', error: error.message });
     }
-};
+}
 
 // Deletar uma adoção
 async function deleteAdoption(req, res) {
@@ -161,87 +249,208 @@ async function deleteAdoption(req, res) {
 // Aceitar uma adoção
 async function acceptAdoption(req, res) {
     try {
-        const { id } = req.params;
-        console.log("Recebido adoptionId:", id);
+        console.log('🔄 Iniciando processo de aceitação de adoção:', {
+            adoptionId: req.params.id,
+            ongId: req.user.id
+        });
 
-        const adoption = await Adoption.findById(id);
-
+        const adoption = await Adoption.findById(req.params.id);
         if (!adoption) {
-            console.log("Adoção não encontrada!");
-            return res.status(404).json({ message: 'Adoção não encontrada' });
+            console.log('❌ Adoção não encontrada:', req.params.id);
+            return res.status(404).json({ message: 'Adoção não encontrada.' });
         }
 
-        // Não permite alterar se já foi finalizada
-        if (adoption.status === 'approved' || adoption.status === 'rejected') {
-            return res.status(400).json({ message: 'Adoção já finalizada e não pode ser alterada.' });
+        console.log('📝 Dados da adoção encontrada:', {
+            adoptionId: adoption._id,
+            petId: adoption.petId,
+            userId: adoption.userId,
+            status: adoption.status
+        });
+
+        // Verifica se a ONG é a dona do pet
+        const pet = await Pet.findById(adoption.petId);
+        if (!pet) {
+            console.log('❌ Pet não encontrado:', adoption.petId);
+            return res.status(404).json({ message: 'Pet não encontrado.' });
         }
 
+        console.log('📝 Dados do pet:', {
+            petId: pet._id,
+            ongId: pet.ongId,
+            requestedOngId: req.user.id
+        });
+
+        if (pet.ongId.toString() !== req.user.id) {
+            console.log('❌ ONG não autorizada:', {
+                petOngId: pet.ongId,
+                requestedOngId: req.user.id
+            });
+            return res.status(403).json({ message: 'Você não tem permissão para aceitar esta adoção.' });
+        }
+
+        // Busca os dados do adotante
+        const adopter = await Adopter.findById(adoption.userId);
+        if (!adopter) {
+            console.log('❌ Adotante não encontrado:', adoption.userId);
+            return res.status(404).json({ message: 'Adotante não encontrado.' });
+        }
+
+        console.log('📝 Dados do adotante:', {
+            adopterId: adopter._id,
+            email: adopter.email,
+            name: adopter.fullName
+        });
+
+        // Atualiza o status da adoção
         adoption.status = 'approved';
+        adoption.updatedAt = new Date();
         await adoption.save();
 
-        const [adopter, pet, ong] = await Promise.all([
-            Adopter.findById(adoption.userId),
-            Pet.findById(adoption.petId),
-            Ong.findById(adoption.ongId)
-        ]);
+        console.log('✅ Adoção atualizada com sucesso:', {
+            adoptionId: adoption._id,
+            newStatus: adoption.status
+        });
 
-        if (!adopter || !pet || !ong) {
-            console.log("Adotante, pet ou ONG não encontrados!");
-            return res.status(404).json({ message: 'Adotante, pet ou ONG não encontrados' });
+        // Envia e-mail para o adotante
+        try {
+            console.log('📧 Iniciando envio de e-mail de aprovação...', {
+                destinatario: adopter.email,
+                nomeAdotante: adopter.fullName,
+                nomePet: pet.name,
+                dadosONG: {
+                    nome: req.user.name,
+                    email: req.user.email,
+                    telefone: req.user.phone
+                }
+            });
+
+            await sendAdoptionApprovedEmail(
+                adopter.email,
+                adopter.fullName,
+                pet.name,
+                {
+                    name: req.user.name,
+                    email: req.user.email,
+                    phone: req.user.phone
+                }
+            );
+
+            console.log('✅ E-mail de aprovação enviado com sucesso para:', adopter.email);
+        } catch (emailError) {
+            console.error('❌ Erro ao enviar e-mail de aprovação:', {
+                error: emailError.message,
+                stack: emailError.stack,
+                destinatario: adopter.email,
+                nomeAdotante: adopter.fullName,
+                nomePet: pet.name
+            });
+            // Não retornamos erro aqui para não impedir a aprovação da adoção
         }
 
-        // Preparar dados de contato da ONG
-        const ongContact = {
-            whatsapp: ong.phone,
-            email: ong.email,
-            instagram: ong.socialMidia?.instagram,
-            facebook: ong.socialMidia?.facebook
-        };
-
-        await sendAdoptionApprovedEmail(adopter.email, adopter.fullName || adopter.name, pet.name, ongContact);
-
-        res.status(200).json({ message: 'Adoção aprovada e email enviado', adoption });
-    } catch (err) {
-        console.error("Erro ao aceitar adoção:", err);
-        res.status(500).json({ message: 'Erro ao aprovar adoção', error: err.message });
+        res.status(200).json({ message: 'Adoção aprovada com sucesso.' });
+    } catch (error) {
+        console.error('❌ Erro ao aprovar adoção:', {
+            error: error.message,
+            stack: error.stack
+        });
+        res.status(500).json({ message: 'Erro ao aprovar adoção.', error: error.message });
     }
 }
 
 // Rejeitar uma adoção
 async function rejectAdoption(req, res) {
     try {
-        const { id } = req.params;
-        console.log("Recebido adoptionId:", id);
+        console.log('🔄 Iniciando processo de rejeição de adoção:', {
+            adoptionId: req.params.id,
+            ongId: req.user.id
+        });
 
-        const adoption = await Adoption.findById(id);
-
+        const adoption = await Adoption.findById(req.params.id);
         if (!adoption) {
-            console.log("Adoção não encontrada!");
-            return res.status(404).json({ message: 'Adoção não encontrada' });
+            console.log('❌ Adoção não encontrada:', req.params.id);
+            return res.status(404).json({ message: 'Adoção não encontrada.' });
         }
 
-        // Não permite alterar se já foi finalizada
-        if (adoption.status === 'approved' || adoption.status === 'rejected') {
-            return res.status(400).json({ message: 'Adoção já finalizada e não pode ser alterada.' });
+        console.log('📝 Dados da adoção encontrada:', {
+            adoptionId: adoption._id,
+            petId: adoption.petId,
+            userId: adoption.userId,
+            status: adoption.status
+        });
+
+        // Verifica se a ONG é a dona do pet
+        const pet = await Pet.findById(adoption.petId);
+        if (!pet) {
+            console.log('❌ Pet não encontrado:', adoption.petId);
+            return res.status(404).json({ message: 'Pet não encontrado.' });
         }
 
+        console.log('📝 Dados do pet:', {
+            petId: pet._id,
+            ongId: pet.ongId,
+            requestedOngId: req.user.id
+        });
+
+        if (pet.ongId.toString() !== req.user.id) {
+            console.log('❌ ONG não autorizada:', {
+                petOngId: pet.ongId,
+                requestedOngId: req.user.id
+            });
+            return res.status(403).json({ message: 'Você não tem permissão para rejeitar esta adoção.' });
+        }
+
+        // Busca os dados do adotante
+        const adopter = await Adopter.findById(adoption.userId);
+        if (!adopter) {
+            console.log('❌ Adotante não encontrado:', adoption.userId);
+            return res.status(404).json({ message: 'Adotante não encontrado.' });
+        }
+
+        console.log('📝 Dados do adotante:', {
+            adopterId: adopter._id,
+            email: adopter.email,
+            name: adopter.fullName
+        });
+
+        // Atualiza o status da adoção
         adoption.status = 'rejected';
+        adoption.updatedAt = new Date();
         await adoption.save();
 
-        const adopter = await Adopter.findById(adoption.userId);
-        const pet = await Pet.findById(adoption.petId);
+        console.log('✅ Adoção atualizada com sucesso:', {
+            adoptionId: adoption._id,
+            newStatus: adoption.status
+        });
 
-        if (!adopter || !pet) {
-            console.log("Adotante ou pet não encontrados!");
-            return res.status(404).json({ message: 'Adotante ou pet não encontrados' });
+        // Envia e-mail para o adotante
+        try {
+            console.log('📧 Iniciando envio de e-mail de rejeição...', {
+                destinatario: adopter.email,
+                nomeAdotante: adopter.fullName,
+                nomePet: pet.name
+            });
+
+            await sendAdoptionRejectedEmail(adopter.email, adopter.fullName, pet.name);
+
+            console.log('✅ E-mail de rejeição enviado com sucesso para:', adopter.email);
+        } catch (emailError) {
+            console.error('❌ Erro ao enviar e-mail de rejeição:', {
+                error: emailError.message,
+                stack: emailError.stack,
+                destinatario: adopter.email,
+                nomeAdotante: adopter.fullName,
+                nomePet: pet.name
+            });
+            // Não retornamos erro aqui para não impedir a rejeição da adoção
         }
 
-        await sendAdoptionRejectedEmail(adopter.email, adopter.fullName || adopter.name, pet.name);
-
-        res.status(200).json({ message: 'Adoção rejeitada e email enviado', adoption });
-    } catch (err) {
-        console.error("Erro ao rejeitar adoção:", err);
-        res.status(500).json({ message: 'Erro ao rejeitar adoção', error: err.message });
+        res.status(200).json({ message: 'Adoção rejeitada com sucesso.' });
+    } catch (error) {
+        console.error('❌ Erro ao rejeitar adoção:', {
+            error: error.message,
+            stack: error.stack
+        });
+        res.status(500).json({ message: 'Erro ao rejeitar adoção.', error: error.message });
     }
 }
 
@@ -272,3 +481,4 @@ module.exports = {
     rejectAdoption,
     acceptAdoption
 };
+

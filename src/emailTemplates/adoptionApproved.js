@@ -25,10 +25,10 @@ module.exports = function (adopterName, petName, ongContact) {
                 <h1 style="color:#d14d72; font-size:2rem; margin-bottom:0.5rem;">Adoção Aprovada!</h1>
                 <p style="color:#222; font-size:1.1rem; margin-bottom:1.5rem;">
                   Olá, <b>${adopterName}</b>!<br/>
-                  Parabéns! Seu pedido de adoção do pet <b>${petName}</b> foi <b>aprovado</b> pela ONG ou protetor responsável.
+                  Parabéns! Seu pedido de adoção do pet <b>${petName}</b> foi <b>aprovado</b>! O projeto responsável entrará em contato com você em breve para combinar os próximos passos.
                 </p>
                 <p style="color:#555; font-size:1rem; margin-bottom:1.5rem;">
-                  Entre em contato com a ONG responsável para combinar os próximos passos e garantir que o processo seja seguro e cheio de carinho.
+                  Agora é só aguardar! O projeto responsável irá falar com você para garantir que o processo seja seguro e cheio de carinho.
                 </p>
                 
                 <div style="background:#f8f8f8; border-radius:8px; padding:1.5rem; margin:1.5rem 0; text-align:left;">

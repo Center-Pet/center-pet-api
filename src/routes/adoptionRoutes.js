@@ -1,6 +1,7 @@
 const express = require('express');
 const adoptionController = require('../controllers/adoptionController');
-const Adoption = require('../models/adoption'); // Adicionando importação
+const Adoption = require('../models/adoption');
+const authMiddleware = require('../middlewares/authMiddleware');
 
 const router = express.Router();
 
@@ -16,7 +17,7 @@ const {
 } = adoptionController;
 
 // Listar todas as adoções
-router.get('/', getAllAdoptions);
+router.get('/', authMiddleware, getAllAdoptions);
 
 // IMPORTANTE: Rotas específicas primeiro!
 // Buscar adoções pelo ID da ONG
@@ -26,22 +27,22 @@ router.get('/by-ong/:ongId', getAdoptionsByOngId);
 router.get('/by-ids', getAdoptionByIds);
 
 // Criar uma nova adoção
-router.post('/create', createAdoption);
+router.post('/create', authMiddleware, createAdoption);
 
 // Atualizar uma adoção existente
-router.patch('/update/:id', updateAdoption);
+router.patch('/update/:id', authMiddleware, updateAdoption);
 
 // Deletar uma adoção
-router.delete('/delete/:id', deleteAdoption);
+router.delete('/:id', authMiddleware, deleteAdoption);
 
 // Aceitar uma adoção
-router.post('/accept/:id', acceptAdoption);
+router.post('/accept/:id', authMiddleware, acceptAdoption);
 
 // Rejeitar uma adoção
-router.post('/reject/:id', rejectAdoption);
+router.post('/reject/:id', authMiddleware, rejectAdoption);
 
-// Obter uma adoção por ID (esta deve ser a ÚLTIMA rota com parâmetro)
-router.get('/:id', async function getAdoptionById(req, res) {
+// Obter uma adoção por ID
+router.get('/:id', authMiddleware, async function getAdoptionById(req, res) {
     try {
         const adoption = await Adoption.findById(req.params.id)
             .populate('petId')

@@ -114,6 +114,13 @@ async function sendAdoptionRequestEmail(to, adopterName, petName, petId, userId,
  * @param {string} ongContact.facebook - Facebook da ONG
  */
 async function sendAdoptionApprovedEmail(to, adopterName, petName, ongContact) {
+  console.log('📧 Iniciando envio de e-mail de aprovação de adoção:', {
+    to,
+    adopterName,
+    petName,
+    ongContact
+  });
+
   const subject = "Adoção aprovada!";
   const html = adoptionApprovedTemplate(adopterName, petName, ongContact);
 
@@ -125,10 +132,35 @@ async function sendAdoptionApprovedEmail(to, adopterName, petName, ongContact) {
   };
 
   try {
+    console.log('📧 Configurações do e-mail de aprovação:', {
+      from: mailOptions.from,
+      to: mailOptions.to,
+      subject: mailOptions.subject,
+      template: {
+        adopterName,
+        petName,
+        ongContact
+      }
+    });
+
     await transporter.sendMail(mailOptions);
-    console.log(`✉️ Adoção aprovada enviada para ${to}`);
+    console.log(`✅ E-mail de aprovação de adoção enviado com sucesso para ${to}`);
   } catch (error) {
-    console.error("❌ Erro ao enviar e-mail de aprovação de adoção:", error);
+    console.error('❌ Erro detalhado ao enviar e-mail de aprovação de adoção:', {
+      error: error.message,
+      stack: error.stack,
+      mailOptions: {
+        from: mailOptions.from,
+        to: mailOptions.to,
+        subject: mailOptions.subject
+      },
+      template: {
+        adopterName,
+        petName,
+        ongContact
+      }
+    });
+    throw error; // Re-throw para ser tratado pelo controller
   }
 }
 
@@ -139,6 +171,12 @@ async function sendAdoptionApprovedEmail(to, adopterName, petName, ongContact) {
  * @param {string} petName - Nome do pet
  */
 async function sendAdoptionRejectedEmail(to, adopterName, petName) {
+  console.log('📧 Iniciando envio de e-mail de rejeição de adoção:', {
+    to,
+    adopterName,
+    petName
+  });
+
   const subject = "Adoção não aprovada";
   const html = adoptionRejectedTemplate(adopterName, petName);
 
@@ -150,10 +188,33 @@ async function sendAdoptionRejectedEmail(to, adopterName, petName) {
   };
 
   try {
+    console.log('📧 Configurações do e-mail de rejeição:', {
+      from: mailOptions.from,
+      to: mailOptions.to,
+      subject: mailOptions.subject,
+      template: {
+        adopterName,
+        petName
+      }
+    });
+
     await transporter.sendMail(mailOptions);
-    console.log(`✉️ Adoção recusada enviada para ${to}`);
+    console.log(`✅ E-mail de rejeição de adoção enviado com sucesso para ${to}`);
   } catch (error) {
-    console.error("❌ Erro ao enviar e-mail de recusa de adoção:", error);
+    console.error('❌ Erro detalhado ao enviar e-mail de rejeição de adoção:', {
+      error: error.message,
+      stack: error.stack,
+      mailOptions: {
+        from: mailOptions.from,
+        to: mailOptions.to,
+        subject: mailOptions.subject
+      },
+      template: {
+        adopterName,
+        petName
+      }
+    });
+    throw error; // Re-throw para ser tratado pelo controller
   }
 }
 
