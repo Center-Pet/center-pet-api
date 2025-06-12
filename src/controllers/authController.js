@@ -97,7 +97,7 @@ async function forgotPassword(req, res) {
   });
 
   // Link para o frontend
-  const resetLink = `http://localhost:5173/reset-password?token=${token}&type=${userType.toLowerCase()}`;
+  const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}&type=${userType.toLowerCase()}`;
   // const resetLink = `https://centerpet.netlify.app/reset-password?token=${token}&type=${userType.toLowerCase()}`; QUANDO VOLTAR PARA PRODUÇÃO DESCOMENTAR ESSE E COMENTAR O DE LOCALHOST
 
   await sendResetPasswordEmail(user.email, user.fullName || user.name, resetLink);
