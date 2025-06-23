@@ -9,13 +9,13 @@ const petSchema = new mongoose.Schema({
   gender: { type: String, enum: ['Macho', 'Fêmea'], required: true }, // Gênero
   size: { type: String, enum: ['Pequeno', 'Médio', 'Grande'], required: true }, // Porte
   coat: { type: String, enum: ['Curta', 'Média', 'Longa'], required: true }, // Pelagem
-  description: { type: String }, // Biografia do pet
+  bio: { type: String, required: true }, // Biografia do pet
   image: [String], // Imagens do pet
   health: {
     castrated: { type: Boolean, required: true }, // Castrado
     vaccinated: { type: Boolean, required: true }, // Vacinado
     dewormed: { type: Boolean, required: true }, // Vermifugado
-    specialCondition: { type: String, required: true }, // Condição especial
+    specialCondition: { type: [String], required: true }, // Array de condições especiais
   },
   waitingTime: { type: String }, // Tempo de espera
   ongId: { type: mongoose.Schema.Types.ObjectId, ref: 'Ong', required: true }, // ID da ONG responsável

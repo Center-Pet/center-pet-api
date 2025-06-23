@@ -24,6 +24,21 @@ async function createPet(req, res) {
       status,
     } = req.body;
 
+    // Processar condições especiais - pode vir como string ou array
+    let specialConditions = [];
+    if (typeof specialCondition === 'string') {
+      // Se vier como string, dividir por vírgula e limpar espaços
+      specialConditions = specialCondition.split(',').map(condition => condition.trim()).filter(condition => condition !== '');
+    } else if (Array.isArray(specialCondition)) {
+      // Se vier como array, usar diretamente
+      specialConditions = specialCondition.filter(condition => condition !== '');
+    }
+
+    // Garantir que sempre tenha pelo menos uma condição
+    if (specialConditions.length === 0) {
+      specialConditions = ['Nenhuma'];
+    }
+
     // Criação do pet
     const newPet = new Pet({
       name,
@@ -31,7 +46,7 @@ async function createPet(req, res) {
       coat,
       state,
       city,
-      description: bio,
+      bio,
       gender,
       age,
       breed,
@@ -40,7 +55,7 @@ async function createPet(req, res) {
         vaccinated: vaccinated === 'Sim',
         castrated: castrated === 'Sim',
         dewormed: dewormed === 'Sim',
-        specialCondition,
+        specialCondition: specialConditions,
       },
       waitingTime,
       ongId,
@@ -108,6 +123,25 @@ async function updatePet(req, res) {
         updateData.health.castrated = updateData.health.castrated === 'Sim';
       if (typeof updateData.health.dewormed === 'string')
         updateData.health.dewormed = updateData.health.dewormed === 'Sim';
+      
+      // Processar condições especiais na atualização
+      if (updateData.health.specialCondition) {
+        let specialConditions = [];
+        if (typeof updateData.health.specialCondition === 'string') {
+          // Se vier como string, dividir por vírgula e limpar espaços
+          specialConditions = updateData.health.specialCondition.split(',').map(condition => condition.trim()).filter(condition => condition !== '');
+        } else if (Array.isArray(updateData.health.specialCondition)) {
+          // Se vier como array, usar diretamente
+          specialConditions = updateData.health.specialCondition.filter(condition => condition !== '');
+        }
+
+        // Garantir que sempre tenha pelo menos uma condição
+        if (specialConditions.length === 0) {
+          specialConditions = ['Nenhuma'];
+        }
+
+        updateData.health.specialCondition = specialConditions;
+      }
     }
 
     // Atualiza o pet
@@ -142,5 +176,5 @@ module.exports = {
   getPetById,
   deletePet,
   updatePet,
-  listPets, // <--- adicione aqui
+  listPets,
 };

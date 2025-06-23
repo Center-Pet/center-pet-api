@@ -6,9 +6,11 @@ const {
     getPetById,
     deletePet,
     updatePet,
-    listPets // <--- adicione aqui
+    listPets
 } = require('../controllers/petController');
-const petController = require('../controllers/petController');
+
+// Rota para listar todos os pets
+router.get('/', listPets);
 
 // Rota para criar um novo pet
 router.post('/register', createPet);
@@ -25,7 +27,4 @@ router.delete('/delete/:petId', deletePet);
 // Rota para editar um pet pelo ID (edição total ou parcial)
 router.patch('/update/:petId', updatePet);
 
-// Rota para listar todos os pets
-router.get('/', listPets);
-
-module.exports = router; // Exporta o roteador
+module.exports = router;
