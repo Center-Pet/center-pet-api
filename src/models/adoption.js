@@ -13,9 +13,9 @@ const adoptionSchema = new mongoose.Schema({
       'rejected',        //Recusada
       'canceled',        //Cancelada
       //'transporting',  //Transporte
-      'inAdjustment',    //Adaptação
+      // 'inAdjustment',    //Adaptação
       'completed',       //Concluída
-      'return'           //Retorno
+      // 'return'           //Retorno
     ],
     required: true
   },

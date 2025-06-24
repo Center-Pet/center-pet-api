@@ -8,6 +8,16 @@ const {
     sendAdoptionRejectedEmail
 } = require('../services/emailService');
 
+// Status válidos para adoções
+const VALID_ADOPTION_STATUSES = [
+    'requestReceived',
+    'inProgress', 
+    'approved',
+    'rejected',
+    'canceled',
+    'completed'
+];
+
 // Listar todas as adoções
 async function getAllAdoptions(req, res) {
     try {
@@ -52,6 +62,14 @@ async function createAdoption(req, res) {
             status,
             requestDate
         } = req.body;
+
+        // Validação do status
+        if (status && !VALID_ADOPTION_STATUSES.includes(status)) {
+            return res.status(400).json({ 
+                message: 'Status inválido. Status permitidos: ' + VALID_ADOPTION_STATUSES.join(', '),
+                validStatuses: VALID_ADOPTION_STATUSES
+            });
+        }
 
         // Verifica se já existe uma solicitação recente (últimos 30 dias)
         const thirtyDaysAgo = new Date();
@@ -116,6 +134,14 @@ async function updateAdoption(req, res) {
             ongId: req.user.id
         });
 
+        // Validação do status
+        if (!req.body.status || !VALID_ADOPTION_STATUSES.includes(req.body.status)) {
+            return res.status(400).json({ 
+                message: 'Status inválido. Status permitidos: ' + VALID_ADOPTION_STATUSES.join(', '),
+                validStatuses: VALID_ADOPTION_STATUSES
+            });
+        }
+
         const adoption = await Adoption.findById(req.params.id);
         if (!adoption) {
             console.log('❌ Adoção não encontrada:', req.params.id);
@@ -125,7 +151,7 @@ async function updateAdoption(req, res) {
         console.log('📝 Dados da adoção encontrada:', {
             adoptionId: adoption._id,
             petId: adoption.petId,
-            adopterId: adoption.adopterId,
+            userId: adoption.userId,
             status: adoption.status,
             newStatus: req.body.status
         });
@@ -152,9 +178,9 @@ async function updateAdoption(req, res) {
         }
 
         // Busca os dados do adotante
-        const adopter = await Adopter.findById(adoption.adopterId);
+        const adopter = await Adopter.findById(adoption.userId);
         if (!adopter) {
-            console.log('❌ Adotante não encontrado:', adoption.adopterId);
+            console.log('❌ Adotante não encontrado:', adoption.userId);
             return res.status(404).json({ message: 'Adotante não encontrado.' });
         }
 
