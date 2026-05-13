@@ -1,6 +1,9 @@
 const dotenvFlow = require('dotenv-flow');
 dotenvFlow.config();
 
+// New Relic APM (após dotenv para NEW_RELIC_* em desenvolvimento local)
+require('newrelic');
+
 console.log("NODE_ENV:", process.env.NODE_ENV);
 console.log("MONGO_URI:", process.env.MONGO_URI);
 

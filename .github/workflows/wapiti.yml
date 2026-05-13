@@ -1,0 +1,44 @@
+name: Wapiti (DAST)
+
+# Escaneia a URL de staging. Configure o secret WAPITI_TARGET_URL no repositório
+# (ex.: https://sua-api.onrender.com). Dispare manualmente após o deploy no Render.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  wapiti:
+    name: Wapiti scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Wapiti
+        run: pip install wapiti3
+
+      - name: Run Wapiti
+        env:
+          TARGET_URL: ${{ secrets.WAPITI_TARGET_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${TARGET_URL}" ]; then
+            echo "::error::Defina o secret WAPITI_TARGET_URL (URL base da API em staging/produção)."
+            exit 1
+          fi
+          mkdir -p reports
+          wapiti -u "${TARGET_URL}" -f json -o reports/wapiti-report.json --flush-attacks 2>&1 | tee reports/wapiti-log.txt
+
+      - name: Upload reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wapiti-reports
+          path: reports/
